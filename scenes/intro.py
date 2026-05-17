@@ -1,19 +1,21 @@
 import pygame
 import os
-from config import CONFIG, UI_FONT_PATH
+import config as cfg
 from scenes.variables import GameState
 
 # ==========================================
 #  INTRO  - puedes crear una escena aparte
 # ==========================================
 
+
+#TODO: Generic reusable cinematic manager
 class IntroManager:
     def __init__(self, set_state_callback, play_music_callback, scene_manager_ref, get_texts_callback):
         self.slides = []
         self.current_index = 0
         self.timer = 0
         self.slide_duration = 6.0
-        self.font = pygame.font.Font(UI_FONT_PATH, 30) # Tamaño de fuente
+        self.font = pygame.font.Font(cfg.UI_FONT_PATH, 30) # Tamaño de fuente
         self.active = False
         
         # --- DEPENDENCIAS EXTERNAS ---
@@ -77,19 +79,19 @@ class IntroManager:
             loops_config = data.get("music_loops", None)
             self.play_music(data["music"], volume=0.6, loops=loops_config)
 
-        path = os.path.join("backgrounds", data["image"])
+        path = os.path.join(cfg.BG_DIR, data["image"])
         try:
             if os.path.exists(path):
                 raw_img = pygame.image.load(path).convert_alpha()
                 self.original_image = pygame.transform.smoothscale(
-                    raw_img, (CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"])
+                    raw_img, (cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"])
                 )
             else:
-                self.original_image = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+                self.original_image = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
                 self.original_image.fill((0, 0, 0))
         except Exception as e:
             print(f"Error cargando slide: {e}")
-            self.original_image = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+            self.original_image = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
             self.original_image.fill((0, 0, 0))
 
         if data.get("effect") == "zoom_out":
@@ -140,11 +142,11 @@ class IntroManager:
                 ease_t = t * (2 - t)
                 
                 current_scale = self.start_scale + (self.end_scale - self.start_scale) * ease_t
-                new_w = int(CONFIG["GAME_WIDTH"] * current_scale)
-                new_h = int(CONFIG["GAME_HEIGHT"] * current_scale)
+                new_w = int(cfg.CONFIG["GAME_WIDTH"] * current_scale)
+                new_h = int(cfg.CONFIG["GAME_HEIGHT"] * current_scale)
                 
                 scaled_img = pygame.transform.scale(self.original_image, (new_w, new_h))
-                rect = scaled_img.get_rect(center=(CONFIG["GAME_WIDTH"]//2, CONFIG["GAME_HEIGHT"]//2))
+                rect = scaled_img.get_rect(center=(cfg.CONFIG["GAME_WIDTH"]//2, cfg.CONFIG["GAME_HEIGHT"]//2))
                 screen.blit(scaled_img, rect)
             else:
                 screen.blit(self.original_image, (0, 0))
@@ -154,7 +156,7 @@ class IntroManager:
             text_str = self.playlist[self.current_index].get("text", "")
             if text_str:
                 # --- LÓGICA DE SALTO DE LÍNEA ---
-                max_width = CONFIG["GAME_WIDTH"] - 100 # Margen de 50px a cada lado
+                max_width = cfg.CONFIG["GAME_WIDTH"] - 100 # Margen de 50px a cada lado
                 words = text_str.split(' ')
                 lines = []
                 current_line = []
@@ -173,10 +175,10 @@ class IntroManager:
                 total_height = len(lines) * line_height
                 
                 # Posición base (Centrado abajo)
-                center_x = CONFIG["GAME_WIDTH"] // 2
-                start_y = CONFIG["GAME_HEIGHT"] - 100 - (total_height // 2)
+                center_x = cfg.CONFIG["GAME_WIDTH"] // 2
+                start_y = cfg.CONFIG["GAME_HEIGHT"] - 100 - (total_height // 2)
                 
-                # Dibujar fondo negro semitransparente para TODO el bloque de texto
+                # Draw a semi-transparent black block behind the text
                 # Calculamos el ancho de la línea más larga para la caja
                 max_line_w = 0
                 for line in lines:
@@ -187,7 +189,7 @@ class IntroManager:
                 bg_rect.center = (center_x, start_y + total_height // 2)
                 
                 s = pygame.Surface((bg_rect.width, bg_rect.height))
-                s.set_alpha(160) # Un poco más oscuro para leer mejor
+                s.set_alpha(160) # A little darker for better readability
                 s.fill((0,0,0))
                 screen.blit(s, bg_rect.topleft)
 

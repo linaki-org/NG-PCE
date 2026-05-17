@@ -1,10 +1,6 @@
-# ==========================================
-#  CONFIGURACIÓN GLOBAL
-# ==========================================
 import os
-# ==========================================
-#  TEXTOS GLOBALES COMPARTIDOS
-# ==========================================
+import json
+
 # Los definimos aquí vacíos para poder importarlos desde classes.py y main.py
 ITEM_NAMES = {}
 OBJ_DESCS = {}
@@ -18,159 +14,63 @@ VERB_KEYS = []
 CINE_TEXTS = {}      # También suele ser necesario compartir cinemáticas
 DIALOGUE_TEXTS = {}  # También suele ser necesario compartir diálogos
 
-# ==========================================
-#  CONFIGURAR DESDE AQUI
-# ==========================================
-CONFIG = {
-    # --- DIMENSIONES DE PANTALLA ---
-    "GAME_WIDTH": 800,  # son las dimensiones con las que hago el juego. luego pondré las que se muestran.
-    "GAME_HEIGHT": 638, # para tener 800x450 de pantalla grafica , 16:9    
+GAME_DIR="game"
+ASSETS_DIR="game/assets"
+SND_DIR="game/snd"
+LANG_DIR="game/languages"
+CURSOR_DIR="game/cursor"
+SAVE_DIR="game/saves"
+ITEMS_DIR="game/assets/items"
+BG_DIR="game/assets/backgrounds"
+HTSPT_DIR="game/assets/hotspots"
+OBJ_DIR="game/assets/objects"
 
-    # --- RESOLUCIÓN DE VENTANA INICIAL (Lo que abre Windows) ---
-    "WINDOW_WIDTH": 960,  # Puedes poner 1280x720, 1920x1080, o dejarlo igual. 
-    "WINDOW_HEIGHT": 766, # yo aqui lo incremento un 20%
-    #siempre seria mejor empezar por una definicion alta para tener imagenes de buena resolucion y luego reducir al mostrar. de esta forma si alguien hac full, se veria perfecto
-    
-    "PLAYER_SPEED": 3.5,
-    "TEXTBOX_HEIGHT": 40,
-    "VERB_MENU_HEIGHT": 128,
-    "BOTTOM_MARGIN": 20,
-    
-    # --- CÁMARA ---
-    "CAMERA_SMOOTHING": 5.0, 
 
-    # --- PATHFINDING ---
-    # "EUCLIDEAN": Más preciso, movimiento natural (usa raíz cuadrada).
-    # "MANHATTAN": Más rápido, ideal para rejillas tipo ciudad (sin diagonales).
-    # "DIAGONAL":  (Chebyshev) Rápido, permite diagonales pero menos preciso que Euclidean.
-    "PATHFINDING_TYPE": "EUCLIDEAN",
-    "PATHFINDING_GRID_SIZE": 10, # 5 para precisión alta, 20 para rendimiento/retro
+with open(os.path.join(GAME_DIR, "game_config.json")) as config_file:
+    CONFIG = json.load(config_file)
 
-    # SISTEMA DE NARRACIÓN
-    # "LUCAS": Texto flotante sobre la cabeza del personaje.
-    # "SIERRA": Texto en una caja centrada (como si fuera un cómic/narrador).
-    # "SUBTITLE": Texto en la parte inferior de la pantalla (fijo).
-    "NARRATION_STYLE": "LUCAS",
-        
-    "ENABLE_SOUND": True,
-    "DEBUG_MODE": False, 
-    "SHOW_HINTS_ONLY": False, 
-    "SHOW_WALKABLE_MASK": False,    #  VARIABLE PARA MOSTRAR MÁSCARA DE CAMINAR  F4---   
-    
-    # --- ESTILO DE CURSOR (Recuperado de v41) ---
-    # "MODERN": Usa los gráficos animados (ojo, mano, caminar...)
-    # "CLASSIC": Usa una cruz estática estilo SCUMM clásico
-    "CURSOR_STYLE": "CLASSIC",
+with open(os.path.join(GAME_DIR, "char_config.json")) as char_config_file:
+    char_config=json.load(char_config_file)
+    PLAYER_CONFIG=char_config["PLAYER"]
+    CHAR_DEFS=char_config["CHARACTERS"]
 
-    "DOUBLE_CLICK_MS": 500, # Milisegundos para detectar doble clic (salida rápida)
-    "IDLE_COOL_THRESHOLD": 10.0, # Tiempo en segundos para animación cool)
+with open(os.path.join(GAME_DIR, "ui_config.json")) as ui_config_file:
+    UI_CONFIG=json.load(ui_config_file)
 
-    # ID de la escena inicial para pruebas rápidas. 
-    # Si es None, carga el Título.
-    "DEV_START_SCENE": "None", # Poner None para release   
-   
-}
-# ==========================================
-#  CONFIGURACIÓN DEL JUGADOR POR DEFECTO
-# ==========================================
-PLAYER_CONFIG = {
-    "NAME": "Gilo",          # Nombre para mostrar en textos/diálogos Bart Gilo Indy, Garba
-    "ASSET_PREFIX": "gilo",  # Prefijo de los archivos (ej: "player_walk.gif") bart , indy, garba
-    "TEXT_COLOR": (255, 255, 255), #blanco
-    "CHAR_ID": "Gilo"
-}
+with open(os.path.join(GAME_DIR, "game_state.json")) as gstate_config_file:
+    GAME_STATE=json.load(gstate_config_file)
 
-# ==========================================
-#  DEFINICIÓN DE PERSONAJES (SPRITES Y FRAMES)
-# ==========================================
-CHAR_DEFS = {
-    "Gilo": {
-        "prefix": "gilo", 
-        "width": 163,       # Ancho del frame
-        "height": 300,      # Alto del frame
-        "base_scale": 0.3,  # escala de partida. 
-        "frames": {
-            "walk_down": 6, "walk_left": 6, "walk_right": 6, "walk_up": 6,
-            "talk_down": 6, "talk_left": 6, "talk_right": 6, "give": 6,
-            "idle": 1,      "push": 1,      "pull": 1,       "pick": 1,     
-            "open": 1,      "close": 1,     "cool": 6,  
-        }
-    },
-    "Bart": {
-        "prefix": "bart", # Prefijo del archivo (ej: indy_wd.gif)
-        "width": 163,      # Ancho del frame
-        "height": 300,     # Alto del frame
-        "base_scale": 0.3,
-        "frames": {
-            "walk_down": 6, "walk_left": 6, "walk_right": 6, "walk_up": 6,
-            "talk_down": 6, "talk_left": 6, "talk_right": 6, "give": 6,
-            "idle": 1,      "push": 1,      "pull": 1,       "pick": 1,     
-            "open": 1,      "close": 1,     "cool": 6,  
-        }
-    },
-}
 
-# ==========================================
-#  CREDITOS
-# ==========================================
-CREDITS_TEXT = """
-================================
-    ADVENTURE NAME CREDITS
-================================
+with open(os.path.join(GAME_DIR, "game_credits.txt")) as credits_file:
+    CREDITS_TEXT = credits_file.read()
 
-    Your Credits Here
 
-================================
-    PyCAPGE CREDITS
-================================
-
-ENGINE & CODE:
-  Garba eduardogarbayo.com
-  zainder.com Programmers
-  riojawebs.com Graphics
-
-SPECIAL THANKS:
-  Python Community
-  Pygame Developers
-  LucasArts (For inspiration)
-  Chir (Indy Java MAGE)
-
-================================
-(CC) 2024-2025 - Garba, Spain
-================================
-"""
-
-# ==========================================
-#  CONFIGURACIÓN GLOBAL DE TEXTO  FLOTANTE
-# ==========================================
-# para chino y japones, fuente universal y open source
-UI_FONT_PATH = os.path.join("fonts", "ui_font.ttf") 
-TEXT_CONFIG = {
-    # Velocidades (segundos por caracter)
-    "SPEED_SLOW": 0.15,
-    "SPEED_MEDIUM": 0.08, # Valor actual 
-    "SPEED_FAST": 0.04,
-    
-    # Tamaños de fuente
-    "SIZE_SMALL": 18, #preesclado 15
-    "SIZE_MEDIUM": 20, # Valor con fuente defeault 27, sin . preescalado 18
-    "SIZE_LARGE": 32,  #preescalado 33
-    
-    # Configuración actual
-    "CURRENT_SPEED": "SPEED_MEDIUM", 
-    "CURRENT_SIZE":  "SIZE_MEDIUM",
-    "FONT_NAME":     UI_FONT_PATH, # None = Fuente por defecto. Puedes poner "arial.ttf", etc.
-    "OUTLINE_WIDTH": 2     # Grosor del borde negro
-}
+TEXT_CONFIG = UI_CONFIG["TEXT_STYLE"]
+UI_FONT_PATH=TEXT_CONFIG["FONT_NAME"]
 
 # ================================================
 # DO NOT TOUCH
 # ================================================
 UI_HEIGHT = CONFIG["TEXTBOX_HEIGHT"] + CONFIG["VERB_MENU_HEIGHT"] + CONFIG["BOTTOM_MARGIN"]
 GAME_AREA_HEIGHT = CONFIG["GAME_HEIGHT"] - UI_HEIGHT
+
+# Fill DIALOGUE_STYLE entries if set to auto
+if UI_CONFIG["DIALOGUE_STYLE"]["AREA_Y"]=="auto":
+    UI_CONFIG["DIALOGUE_STYLE"]["AREA_Y"]=GAME_AREA_HEIGHT
+
+if UI_CONFIG["DIALOGUE_STYLE"]["AREA_HEIGHT"]=="auto":
+    UI_CONFIG["DIALOGUE_STYLE"]["AREA_HEIGHT"]=UI_HEIGHT
+
 GLOBAL_STATE = {
     "screen_text": "",    # Texto actual en pantalla
     "current_speaker": None, # Quién está hablando
-    "current_lang_file": "es.yaml"  
+    "current_lang_file": CONFIG["DEFAULT_LANGUAGE"]
+}
+
+STEP_TYPES = {
+    "step": "step.ogg",
+    "step_wood": "step_wood.ogg",
+    "step_grass": "step_grass.ogg",
+    "step_rug": "step_rug.ogg"
 }
 

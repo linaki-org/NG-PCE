@@ -2,7 +2,7 @@ import pygame
 import os
 
 # ==========================================
-#  GESTOR DE RECURSOS (PRE-CACHE)
+#  Resources Manager (Pre-Cache)
 # ==========================================
 class ResourceManager:
     def __init__(self):
@@ -27,7 +27,7 @@ class ResourceManager:
             return None
 
     def clear_cache(self):
-        """Libera toda la memoria de imágenes cacheadas."""
+        """Free memory of all cached imgs"""
         count = len(self.image_cache)
         self.image_cache.clear()
         print(f"[CACHE] Freed {count} images from RAM.")

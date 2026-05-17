@@ -1,6 +1,6 @@
 import pygame
 import os
-from config import CONFIG, UI_FONT_PATH
+import config as cfg
 from scenes.variables import GameState
 # ==========================================
 #  THE END
@@ -11,7 +11,7 @@ class EndingManager:
         self.current_index = 0
         self.timer = 0
         self.slide_duration = 5.0
-        self.font = pygame.font.Font(UI_FONT_PATH, 30)
+        self.font = pygame.font.Font(cfg.UI_FONT_PATH, 30)
         self.active = False
         self.original_image = None
         self.doing_zoom = False
@@ -68,18 +68,18 @@ class EndingManager:
         if "music" in data:
             self.play_music(data["music"], volume=0.8, loops=0)
 
-        path = os.path.join("backgrounds", data["image"])
+        path = os.path.join(cfg.BG_DIR, data["image"])
         try:
             if os.path.exists(path):
                 raw_img = pygame.image.load(path).convert_alpha()
                 self.original_image = pygame.transform.smoothscale(
-                    raw_img, (CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"])
+                    raw_img, (cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"])
                 )
             else:
-                self.original_image = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+                self.original_image = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
                 self.original_image.fill((0, 0, 0))
         except Exception:
-            self.original_image = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+            self.original_image = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
             self.original_image.fill((0, 0, 0))
 
         if data.get("effect") == "zoom_out":
@@ -129,11 +129,11 @@ class EndingManager:
                 ease_t = t * (2 - t)
                 current_scale = self.start_scale + (self.end_scale - self.start_scale) * ease_t
                 
-                new_w = int(CONFIG["GAME_WIDTH"] * current_scale)
-                new_h = int(CONFIG["GAME_HEIGHT"] * current_scale)
+                new_w = int(cfg.CONFIG["GAME_WIDTH"] * current_scale)
+                new_h = int(cfg.CONFIG["GAME_HEIGHT"] * current_scale)
                 
                 scaled_img = pygame.transform.scale(self.original_image, (new_w, new_h))
-                rect = scaled_img.get_rect(center=(CONFIG["GAME_WIDTH"]//2, CONFIG["GAME_HEIGHT"]//2))
+                rect = scaled_img.get_rect(center=(cfg.CONFIG["GAME_WIDTH"]//2, cfg.CONFIG["GAME_HEIGHT"]//2))
                 screen.blit(scaled_img, rect)
             else:
                 screen.blit(self.original_image, (0, 0))
@@ -143,7 +143,7 @@ class EndingManager:
             text_str = self.playlist[self.current_index].get("text", "")
             if text_str:
                 # 1. Calcular líneas
-                max_width = CONFIG["GAME_WIDTH"] - 100
+                max_width = cfg.CONFIG["GAME_WIDTH"] - 100
                 words = text_str.split(' ')
                 lines = []
                 current_line = []
@@ -160,8 +160,8 @@ class EndingManager:
                 # 2. Configurar dimensiones del bloque de texto
                 line_height = self.font.get_linesize()
                 total_height = len(lines) * line_height
-                center_x = CONFIG["GAME_WIDTH"] // 2
-                start_y = CONFIG["GAME_HEIGHT"] - 100 - (total_height // 2)
+                center_x = cfg.CONFIG["GAME_WIDTH"] // 2
+                start_y = cfg.CONFIG["GAME_HEIGHT"] - 100 - (total_height // 2)
                 
                 # 3. Dibujar Caja de Fondo para TODO el bloque
                 max_line_w = 0

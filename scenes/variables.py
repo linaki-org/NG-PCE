@@ -1,22 +1,6 @@
-# ==========================================
-#  GLOBAL GAME VARIABLES  - TOUCH -
-# ==========================================
+import config as cfg
 
-GAME_STATE = {
-    # CONDITION OF USED ITEMS
-    "campana_recogida": False,
-    "martillo_recogido": False,
-    "farol_recogido": False,
-    "pilas_linterna_recogidas" : False,
-    "linterna_sin_pilas_recogida" : False, 
-    "linterna_con_pilas_recogida": False,
-    "intro_ayuntamiento_vista": False, 
-    "pala_recogida": False,
-   
-    # STATUS OF NPS CHARACTERS YOU CAN ADD - NPCs PARA AÑADIR
-    "controlando_gilo": True,  # True = Indy es el player (NPC Indy oculto)
-    "controlando_bart": False, # False = Bart es NPC (NPC Bart visible)
-}
+GAME_STATE = cfg.GAME_STATE.copy()
 
 # ==========================================
 #  DO NOT TOUCH

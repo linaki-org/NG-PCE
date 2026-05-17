@@ -1,7 +1,3 @@
-# ====================================================================================
-#   PyCAPGE - Python Classic Adventure Point and Click Game Engine v-1.0 by Garba
-# ====================================================================================
-# main.py - 2 enero 2026
 import pygame
 import sys
 import os
@@ -13,15 +9,14 @@ import json
 import datetime
 import yaml
 
-# --- NUEVOS IMPORTS ---
-from config import CONFIG, PLAYER_CONFIG, CHAR_DEFS, CREDITS_TEXT, TEXT_CONFIG, UI_FONT_PATH, UI_HEIGHT, GAME_AREA_HEIGHT, GLOBAL_STATE, SOUNDS
-from config import ITEM_NAMES, OBJ_DESCS, SCENE_NAMES, GAME_MSGS, MENU_TEXTS, TITLE_TEXTS, VERBS_LOCALIZED, CINE_TEXTS, DIALOGUE_TEXTS, VERB_KEYS
+import config as cfg
+from config import ITEM_NAMES, OBJ_DESCS, SCENE_NAMES, GAME_MSGS, TITLE_TEXTS, VERBS_LOCALIZED, CINE_TEXTS, DIALOGUE_TEXTS, VERB_KEYS
 
-# Importar desde carpetas
-from scenes.variables import GAME_STATE, GameState    # Ahora está en scenes/
-from scenes.intro import IntroManager                 # Ahora está en scenes/
-from scenes.ending import EndingManager               # Ahora está en scenes/
-import scenes.scenes as scenes                        # Importamos el módulo scenes dentro de la carpeta scenes
+# Scenes imports
+from scenes.variables import GAME_STATE, GameState
+from scenes.intro import IntroManager
+from scenes.ending import EndingManager
+import scenes.scenes as scenes
 from engine.resources import RES_MANAGER
 from engine.classes import (
     TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_RIGHT, 
@@ -31,7 +26,7 @@ from engine.classes import (
     Inventory, DebugConsole, CreditsWindow, MapSystem, Movement, CutsceneManager, update_graphics_metrics, get_sharp_font, draw_text_sharp
 )
 
-globals().update(CONFIG) # Esto inyecta automáticamente todo el diccionario en el ámbito global del archivo. Perdon a los puristas.
+globals().update(cfg.CONFIG) # Inject all config dict directly in the global dict
 
 # Ignorar advertencias
 warnings.filterwarnings("ignore", category=UserWarning, module="pygame")
@@ -41,7 +36,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pygame")
 # ==========================================
 def load_translations(filename="es.yaml"):
     # Construimos la ruta completa: carpeta "languages" + nombre de archivo
-    full_path = os.path.join("languages", filename)
+    full_path = os.path.join(cfg.LANG_DIR, filename)
     
     try:
         with open(full_path, "r", encoding="utf-8") as f:
@@ -70,14 +65,14 @@ def reload_game_texts(filename):
     SCENE_NAMES.clear();      SCENE_NAMES.update(data["scenes"])
     GAME_MSGS.clear();        GAME_MSGS.update(data["system_messages"])
     VERBS_LOCALIZED.clear();  VERBS_LOCALIZED.update(data["verbs"])
-    MENU_TEXTS.clear();       MENU_TEXTS.update(data["menus"])
+    cfg.MENU_TEXTS.clear();       cfg.MENU_TEXTS.update(data["menus"])
     TITLE_TEXTS.clear();      TITLE_TEXTS.update(data["titles"])
     CINE_TEXTS.clear();       CINE_TEXTS.update(data["cinematics"])
     DIALOGUE_TEXTS.clear();   DIALOGUE_TEXTS.update(data.get("dialogues", {}))
 
     GAME_MSGS["VERB_USE"] = VERBS_LOCALIZED.get("USE", "USE")
     VERB_KEYS = list(VERBS_LOCALIZED.keys())   
-    GLOBAL_STATE["current_lang_file"] = filename   
+    cfg.GLOBAL_STATE["current_lang_file"] = filename   
     
     print(f"[SYSTEM] Language changed to: {filename}")
     
@@ -126,11 +121,11 @@ reload_game_texts("es.yaml")
 TEXT_DISPLAY_TIMER = 0
 INFO_TEXT_TIMER = 0
 SCREEN_OVERLAY_TEXT = ""
-CURRENT_CURSOR_STATE = "WALK"
+CURRENT_CURSOR_STATE = cfg.UI_CONFIG["DEFAULT_CURSOR_STATE"]
 CURRENT_ACTION_ANIM = None
 MUSIC_STOP_TIME = 0.0 
 LAST_EXIT_CLICK_TIME = 0 # --- NUEVO: Variable para el doble clic ---
-DOUBLE_CLICK_THRESHOLD = 400 # Milisegundos para considerar doble clic
+DOUBLE_CLICK_THRESHOLD = cfg.UI_CONFIG["DOUBLE_CLICK_THRESHOLD"] # Milisegundos para considerar doble clic
 
 # ==========================================
 #  GESTOR DE RECURSOS PRE-CACHE
@@ -140,42 +135,11 @@ DOUBLE_CLICK_THRESHOLD = 400 # Milisegundos para considerar doble clic
 CURRENT_SPEAKER_REF = None
 CURRENT_TEXT_POS = None
 
-# ==========================================
-#  GUARDAR PARTIDAS
-# ==========================================
-SAVE_FILE_NAME = "savegame.json"
-SAVE_GAME_DIR = "games"
 
 # ==========================================
-#  CONFIGURACIÓN DE DIÁLOGOS 
+#  cfg.CONFIGURACIÓN DE DIÁLOGOS 
 # ==========================================
-DIALOGUE_STYLE = {
-    "BG_COLOR": (0, 0, 0),
-    "TEXT_COLOR": (170, 170, 170),
-    "HIGHLIGHT_COLOR": (255, 255, 85),
-    "CHOSEN_COLOR": (100, 100, 100),
-    
-    "FONT_SIZE": 26,
-    "LINE_SPACING": 30,
-    "MAX_LINES": 4, 
-    
-    "MARGIN_LEFT": 20,
-    "MARGIN_TOP": 15,
-    
-    "AREA_Y": GAME_AREA_HEIGHT, 
-    "AREA_HEIGHT": UI_HEIGHT,
-
-    # --- NUEVA CONFIGURACIÓN DE FLECHAS (GLOBAL) ---
-    "SCROLL_BTN_SIZE": 30,       # Tamaño del cuadrado del botón
-    "SCROLL_X_MARGIN": 50,       # Distancia desde el borde derecho de la pantalla
-    "SCROLL_Y_OFFSET": 20,       # Separación vertical entre las flechas
-    
-    # Colores estilo SCUMM (Igual que el inventario)
-    "BTN_BG": (68, 68, 68),            # Gris Fondo
-    "BTN_BORDER_LIGHT": (102, 102, 102), # Borde luz (Arriba/Izq)
-    "BTN_BORDER_DARK": (34, 34, 34),     # Borde sombra (Abajo/Der)
-    "ARROW_COLOR": (255, 255, 170)       # Amarillo pálido
-}
+DIALOGUE_STYLE = cfg.UI_CONFIG["DIALOGUE_STYLE"]
 
 # ==========================================
 #  INICIALIZACIÓN Y SONIDOS
@@ -184,19 +148,23 @@ pygame.init()
 # 1. La Ventana Real (El marco de Windows) -> Usa WINDOW_WIDTH / HEIGHT
 # muy borroso pero rapido con : window_flags = pygame.RESIZABLE | pygame.SCALED 
 window_flags = pygame.RESIZABLE 
-real_window = pygame.display.set_mode((CONFIG["WINDOW_WIDTH"], CONFIG["WINDOW_HEIGHT"]), window_flags)
-pygame.display.set_caption("PyCAPGE - Python Classic Adventure Point and Click Game Engine by Garba")
+real_window = pygame.display.set_mode((cfg.CONFIG["WINDOW_WIDTH"], cfg.CONFIG["WINDOW_HEIGHT"]), window_flags)
+pygame.display.set_caption(cfg.CONFIG["WINDOW_TITLE"])
 
 # =====================================================
 #  PANTALLA DE CARGA
 # =====================================================
 # Creamos una fuente temporal básica del sistema
 loading_font = pygame.font.SysFont(None, 20)
-loading_text = loading_font.render("Loading ...", True, (200, 200, 200)) # Gris clarito
+loading_text = loading_font.render("Loading ...", True, (255, 255, 255)) # White
+powered_by_text = loading_font.render("Powered by NG-PCE", True, (200, 200, 200)) # Light grey
 real_window.fill((0, 0, 0)) # Limpiamos en negro
-text_x = CONFIG["WINDOW_WIDTH"] // 2 - loading_text.get_width() // 2
-text_y = CONFIG["WINDOW_HEIGHT"] // 2
+text_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - loading_text.get_width() // 2
+text_y = cfg.CONFIG["WINDOW_HEIGHT"] // 2
+powered_by_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - powered_by_text.get_width() // 2
+powered_by_y = cfg.CONFIG["WINDOW_HEIGHT"] * 0.75
 real_window.blit(loading_text, (text_x, text_y))
+real_window.blit(powered_by_text, (powered_by_x, powered_by_y))
 
 
 
@@ -204,7 +172,7 @@ real_window.blit(loading_text, (text_x, text_y))
 pygame.display.flip()
 # 2. El Lienzo Virtual (Tu juego interno) -> Usa GAME_WIDTH / HEIGHT
 # AQUÍ ESTABA EL ERROR ANTES, ahora ya existe la clave correcta.
-screen = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+screen = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
 clock = pygame.time.Clock()
 # Variables para gestionar el escalado del ratón
 scale_factor = 1.0
@@ -212,35 +180,30 @@ offset_x = 0
 offset_y = 0
 
 # --- GESTOR DE SONIDOS GLOBAL ---
-if CONFIG["ENABLE_SOUND"]:
+if cfg.CONFIG["ENABLE_SOUND"]:
     try:
         if not pygame.mixer.get_init(): pygame.mixer.init()        
         # --- SONIDOS DE PASOS ---
-        step_types = {
-            "step":       "step.ogg",       
-            "step_wood":  "step_wood.ogg",  
-            "step_grass": "step_grass.ogg", 
-            "step_rug":   "step_rug.ogg"    
-        }
 
-        for key, filename in step_types.items():
-            path = os.path.join("snd", filename)
+
+        for key, filename in cfg.STEP_TYPES.items():
+            path = os.path.join(cfg.SND_DIR, filename)
             if os.path.exists(path):
                 s = pygame.mixer.Sound(path)
                 s.set_volume(0.4) # Volumen de pasos
-                SOUNDS[key] = s   # AHORA ESTO FUNCIONARÁ PORQUE SOUNDS YA EXISTE
+                cfg.SOUNDS[key] = s   # AHORA ESTO FUNCIONARÁ PORQUE cfg.SOUNDS YA EXISTE
             else:
                 # Fallback: Si falta uno específico, usamos el default si existe
-                if key != "step" and "step" in SOUNDS:
-                    SOUNDS[key] = SOUNDS["step"]
+                if key != "step" and "step" in cfg.SOUNDS:
+                    cfg.SOUNDS[key] = cfg.SOUNDS["step"]
                 else:
                     print(f"[WARNING] Missing sound: {filename}")
 
         # --- OTROS SONIDOS ---
-        medal_path = os.path.join("snd", "medal.ogg")
+        medal_path = os.path.join(cfg.SND_DIR, "medal.ogg")
         if os.path.exists(medal_path):
-            SOUNDS["medal"] = pygame.mixer.Sound(medal_path)
-            SOUNDS["medal"].set_volume(0.5)
+            cfg.SOUNDS["medal"] = pygame.mixer.Sound(medal_path)
+            cfg.SOUNDS["medal"].set_volume(0.5)
             
         # Añade aquí el resto de sonidos puntuales (church-bell, etc)...
         
@@ -258,7 +221,7 @@ def play_scene_music(music_file_name, duration_s=0.0, volume=1.0, loops=None):
     loops (int, opcional): -1 para infinito, 0 para una vez. Si es None, se calcula automático.
     """
     global MUSIC_STOP_TIME
-    if not CONFIG["ENABLE_SOUND"]:
+    if not cfg.CONFIG["ENABLE_SOUND"]:
         return
 
     # Detener cualquier música actual
@@ -267,7 +230,7 @@ def play_scene_music(music_file_name, duration_s=0.0, volume=1.0, loops=None):
     # 1. Ajustar el volumen
     pygame.mixer.music.set_volume(max(0.0, min(1.0, volume)))
 
-    music_path = os.path.join("snd", music_file_name)
+    music_path = os.path.join(cfg.SND_DIR, music_file_name)
     
     if os.path.exists(music_path):
         try:
@@ -309,10 +272,10 @@ def stop_scene_music():
 #  HERRAMIENTAS DE DEBUG
 # ==========================================
 def draw_debug_overlay(screen, scene, character, movement):
-    if not CONFIG["DEBUG_MODE"]: return
+    if not cfg.CONFIG["DEBUG_MODE"]: return
 
-    font = pygame.font.Font(UI_FONT_PATH, 12)
-    overlay = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
+    font = pygame.font.Font(cfg.UI_FONT_PATH, 12)
+    overlay = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
     cam_x = scene.camera_x
     
     # ---------------------------------------------------------
@@ -323,12 +286,12 @@ def draw_debug_overlay(screen, scene, character, movement):
         screen_rect = exit_zone.rect.copy()
         screen_rect.x -= cam_x 
         
-        if not CONFIG["SHOW_HINTS_ONLY"]:
+        if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
             pygame.draw.rect(overlay, (255, 0, 0, 60), screen_rect) 
         
         pygame.draw.rect(overlay, (255, 0, 0), screen_rect, 2)
         
-        if not CONFIG["SHOW_HINTS_ONLY"]:
+        if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
             txt = font.render(f"EXIT -> {exit_zone.target_scene}", True, (255, 255, 255))
             overlay.blit(txt, (screen_rect.x, screen_rect.y - 15))
 
@@ -338,19 +301,19 @@ def draw_debug_overlay(screen, scene, character, movement):
         screen_rect.x -= cam_x
         
         if screen.get_rect().colliderect(screen_rect): 
-            if not CONFIG["SHOW_HINTS_ONLY"]:
+            if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
                 pygame.draw.rect(overlay, (0, 255, 255, 60), screen_rect)
 
             pygame.draw.rect(overlay, (0, 255, 255), screen_rect, 2)
             
-            label_text = hs.label if CONFIG["SHOW_HINTS_ONLY"] else f"ID: {hs.name}"
+            label_text = hs.label if cfg.CONFIG["SHOW_HINTS_ONLY"] else f"ID: {hs.name}"
             txt = font.render(label_text, True, (0, 255, 255))
             overlay.blit(txt, (screen_rect.x, screen_rect.y - 15))
 
     # ---------------------------------------------------------
     # 2. ELEMENTOS SOLO VISIBLES EN DEBUG COMPLETO
     # ---------------------------------------------------------
-    if not CONFIG["SHOW_HINTS_ONLY"]:
+    if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
         
         # --- NUEVO: DIBUJAR AMBIENT ANIMATIONS (ROSA) ---
         # Esto te permitirá ver la colisión sólida que hemos arreglado
@@ -401,7 +364,7 @@ def draw_debug_overlay(screen, scene, character, movement):
         # F) HUD SUPERIOR
         info_str = f"FPS:{int(clock.get_fps())} | CAM_X:{int(cam_x)}"
         debug_txt = font.render(info_str, True, (255, 255, 0))    
-        pygame.draw.rect(screen, (0,0,0), (0, 0, CONFIG["GAME_WIDTH"], 20))     
+        pygame.draw.rect(screen, (0,0,0), (0, 0, cfg.CONFIG["GAME_WIDTH"], 20))     
         screen.blit(debug_txt, (10, 3))
     screen.blit(overlay, (0,0))
     
@@ -410,14 +373,14 @@ def draw_debug_overlay(screen, scene, character, movement):
 # ==========================================
 def enable_debug():
     """Activa el modo Debug completo (Técnico)"""
-    CONFIG["DEBUG_MODE"] = True
-    CONFIG["SHOW_HINTS_ONLY"] = False # Muestra TODO
+    cfg.CONFIG["DEBUG_MODE"] = True
+    cfg.CONFIG["SHOW_HINTS_ONLY"] = False # Muestra TODO
     debug_log("Debug Mode: ON (FULL)")
 
 def enable_game_help():
     """Activa solo las ayudas visuales (Hotspots)"""
-    CONFIG["DEBUG_MODE"] = True
-    CONFIG["SHOW_HINTS_ONLY"] = True # Solo muestra Hotspots/Salidas
+    cfg.CONFIG["DEBUG_MODE"] = True
+    cfg.CONFIG["SHOW_HINTS_ONLY"] = True # Solo muestra Hotspots/Salidas
     debug_log("Game Help: ON (HINTS ONLY)")
 
 # ==========================================
@@ -448,8 +411,8 @@ def load_cursor_images():
 
     debug_log("--- LOADING CURSORS ---")
     for verb, (file_normal, file_active) in cursor_files.items():
-        path_norm = os.path.join("cursor", file_normal)
-        path_act  = os.path.join("cursor", file_active)
+        path_norm = os.path.join(cfg.CURSOR_DIR, file_normal)
+        path_act  = os.path.join(cfg.CURSOR_DIR, file_active)
         try:
             imgs = []
             if os.path.exists(path_norm):
@@ -476,7 +439,7 @@ def draw_cursor(target_surface, is_active=False):
     # ----------------------------------------------
 
     # --- MODO CLÁSICO (Cruz) ---
-    if CONFIG.get("CURSOR_STYLE") == "CLASSIC":
+    if cfg.CONFIG.get("CURSOR_STYLE") == "CLASSIC":
         color = (255, 255, 255) 
         size = 10 
         thickness = 2
@@ -526,8 +489,8 @@ def get_virtual_mouse_pos():
     
     # CLAMP: Forzamos a que el valor esté DENTRO del juego (0 a 800/638).
     # Esto evita que el código detecte clics en las bandas negras.
-    virtual_x = max(0, min(CONFIG["GAME_WIDTH"] - 1, int(virtual_x)))
-    virtual_y = max(0, min(CONFIG["GAME_HEIGHT"] - 1, int(virtual_y)))
+    virtual_x = max(0, min(cfg.CONFIG["GAME_WIDTH"] - 1, int(virtual_x)))
+    virtual_y = max(0, min(cfg.CONFIG["GAME_HEIGHT"] - 1, int(virtual_y)))
     
     return virtual_x, virtual_y
 
@@ -535,12 +498,12 @@ def draw_overlay_text(screen, text, speaker=None, camera_x=0):
     if not text: return
 
     # --- Configuración Base ---
-    screen_w = CONFIG["GAME_WIDTH"]
+    screen_w = cfg.CONFIG["GAME_WIDTH"]
     margin = 20
-    style = CONFIG.get("NARRATION_STYLE", "LUCAS")
+    style = cfg.CONFIG.get("NARRATION_STYLE", "LUCAS")
     
     # Tamaño base de la fuente
-    base_size = TEXT_CONFIG[TEXT_CONFIG["CURRENT_SIZE"]]
+    base_size = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SIZE"]]
     
     # Color
     text_color = (255, 255, 255) 
@@ -556,7 +519,7 @@ def draw_overlay_text(screen, text, speaker=None, camera_x=0):
         bottom_y = CURRENT_TEXT_POS[1]
     elif style == "SUBTITLE":
         center_x = screen_w // 2
-        bottom_y = CONFIG["GAME_HEIGHT"] - 195
+        bottom_y = cfg.CONFIG["GAME_HEIGHT"] - 195
     elif style == "SIERRA":
         center_x = screen_w // 2
         bottom_y = 150 
@@ -576,7 +539,7 @@ def draw_overlay_text(screen, text, speaker=None, camera_x=0):
 
     # --- Word Wrapping (Calculado con fuente dummy para layout) ---
     # Usamos una fuente dummy temporal para calcular saltos de línea logicamente
-    dummy_font = pygame.font.Font(TEXT_CONFIG["FONT_NAME"], base_size)
+    dummy_font = pygame.font.Font(cfg.TEXT_CONFIG["FONT_NAME"], base_size)
     max_text_width = 500 
     words = text.split(' ')
     lines = []
@@ -717,11 +680,11 @@ init_cursor()
 
 # --- AQUÍ ESTÁN LOS CAMBIOS CRÍTICOS ---
 scene_manager = SceneManager()
-# AHORA EL PLAYER SE CARGA USANDO EL ID DE LA CONFIGURACIÓN
+# AHORA EL PLAYER SE CARGA USANDO EL ID DE LA cfg.CONFIGURACIÓN
 player = AnimatedCharacter(
     400, 300, 
-    char_id=PLAYER_CONFIG["CHAR_ID"], 
-    text_color=PLAYER_CONFIG["TEXT_COLOR"]
+    char_id=cfg.PLAYER_CONFIG["CHAR_ID"], 
+    text_color=cfg.PLAYER_CONFIG["TEXT_COLOR"]
 )
 # ¡¡¡LÍNEA NUEVA OBLIGATORIA!!! 
 # Registramos al jugador en el manager para siempre
@@ -770,13 +733,13 @@ def game_play_event(texto=None, play_sound=None, flag=None, delete_item=None, an
         
         # Cálculo automático del tiempo
         if text_time is None:
-            speed_val = TEXT_CONFIG[TEXT_CONFIG["CURRENT_SPEED"]]
+            speed_val = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SPEED"]]
             TEXT_DISPLAY_TIMER = max(1.5, len(texto) * speed_val) 
         else:
             TEXT_DISPLAY_TIMER = text_time    
    
     # --- BLOQUE DE SONIDO MEJORADO (SOPORTA LISTAS Y CARGA DINÁMICA) ---
-    if play_sound and CONFIG["ENABLE_SOUND"]:
+    if play_sound and cfg.CONFIG["ENABLE_SOUND"]:
         # 1. Convertimos a lista si es solo un texto, para tratarlo todo igual
         sonidos_a_reproducir = []
         if isinstance(play_sound, list):
@@ -786,15 +749,15 @@ def game_play_event(texto=None, play_sound=None, flag=None, delete_item=None, an
             
         # 2. Recorremos la lista y reproducimos cada uno
         for sonido_nombre in sonidos_a_reproducir:
-            s = SOUNDS.get(sonido_nombre)
+            s = cfg.SOUNDS.get(sonido_nombre)
             
             # Si no está en memoria, intentamos cargarlo
             if not s:
-                path_to_sound = os.path.join("snd", sonido_nombre)
+                path_to_sound = os.path.join(cfg.SND_DIR, sonido_nombre)
                 if os.path.exists(path_to_sound):
                     try:
                         s = pygame.mixer.Sound(path_to_sound)
-                        SOUNDS[sonido_nombre] = s # Guardar en caché
+                        cfg.SOUNDS[sonido_nombre] = s # Guardar en caché
                     except Exception as e:
                         print(f"[SOUND ERROR] Failed to load {sonido_nombre}: {e}")
                 else:
@@ -927,7 +890,7 @@ def execute_hotspot_action(hotspot, verb):
 
     # CASO B: Es RECOGER (PICK UP)
     if verb == "PICK UP" and hasattr(hotspot, 'flag_name') and hotspot.flag_name:
-        if CONFIG["ENABLE_SOUND"] and "medal" in SOUNDS: SOUNDS["medal"].play()        
+        if cfg.CONFIG["ENABLE_SOUND"] and "medal" in cfg.SOUNDS: cfg.SOUNDS["medal"].play()        
         
         # Añadir al inventario
         label_key = getattr(hotspot, 'label_id', None)        
@@ -1068,7 +1031,7 @@ def change_player_active(nuevo_id):
     scene = scene_manager.get_current_scene()
     
     # 1. Identificar quiénes somos AHORA (antes del cambio) y dónde estamos
-    old_id = PLAYER_CONFIG["CHAR_ID"]
+    old_id = cfg.PLAYER_CONFIG["CHAR_ID"]
     old_x, old_y = player.rect.centerx, player.rect.bottom
     
     # 2. Buscar el Hotspot del NPC al que vamos a controlar para saber sus coordenadas
@@ -1098,7 +1061,7 @@ def change_player_active(nuevo_id):
     GAME_STATE[flag_npc_viejo] = False  # False = Mostrar NPC (porque ya no es el Player)
     
     # Actualizamos la configuración del jugador
-    PLAYER_CONFIG["CHAR_ID"] = nuevo_id 
+    cfg.PLAYER_CONFIG["CHAR_ID"] = nuevo_id 
     # =================================================================
 
     # 4. TRANSFORMAR AL JUGADOR (PLAYER OBJECT)
@@ -1176,7 +1139,7 @@ dependencies = {
     "map_system": map_system,
     "ending_manager": ending_manager,
     "GAME_STATE": GAME_STATE,
-    "PLAYER_CONFIG": PLAYER_CONFIG,
+    "PLAYER_CONFIG": cfg.PLAYER_CONFIG,
     
     # Funciones lógicas
     "smart_move_to": smart_move_to,
@@ -1194,8 +1157,8 @@ dependencies = {
     "CINE_TEXTS": CINE_TEXTS,
     "GAME_MSGS": GAME_MSGS,
     "DIALOGUE_TEXTS": DIALOGUE_TEXTS,
-    "GAME_AREA_HEIGHT": GAME_AREA_HEIGHT
-    
+    "GAME_AREA_HEIGHT": cfg.GAME_AREA_HEIGHT
+
 }
 scenes.load_scenes(dependencies)
 
@@ -1203,10 +1166,10 @@ scenes.load_scenes(dependencies)
 #  9. ARRANQUE DEL JUEGO 
 # ==========================================
 # Recuperamos la configuración de inicio rápido
-start_scene_id = CONFIG.get("DEV_START_SCENE") 
+start_scene_id = cfg.CONFIG.get("DEV_START_SCENE") 
 
 # Lógica: ¿Arrancamos en modo DEBUG directo a una escena, o normal al Título?
-if CONFIG["DEBUG_MODE"] and start_scene_id:
+if cfg.CONFIG["DEBUG_MODE"] and start_scene_id:
     # 1. Modo Desarrollo: Saltamos directo a la escena configurada
     print(f"[BOOT] Debug Mode: Skipping intro and title. Loading: {start_scene_id}")
     scene_manager.change_scene(start_scene_id)
@@ -1241,15 +1204,15 @@ def calculate_scale_metrics():
 
     # 2. Calcular la escala manteniendo la relación de aspecto (Aspect Ratio)
     # Calculamos cuánto tendríamos que escalar por ancho y por alto
-    scale_w = win_w / CONFIG["GAME_WIDTH"]
-    scale_h = win_h / CONFIG["GAME_HEIGHT"]
+    scale_w = win_w / cfg.CONFIG["GAME_WIDTH"]
+    scale_h = win_h / cfg.CONFIG["GAME_HEIGHT"]
     
     # Nos quedamos con la menor de las dos para que el juego quepa entero
     scale_factor = min(scale_w, scale_h)
     
     # 3. Calcular los márgenes (barras negras) para centrar el juego
-    new_w = int(CONFIG["GAME_WIDTH"] * scale_factor)
-    new_h = int(CONFIG["GAME_HEIGHT"] * scale_factor)
+    new_w = int(cfg.CONFIG["GAME_WIDTH"] * scale_factor)
+    new_h = int(cfg.CONFIG["GAME_HEIGHT"] * scale_factor)
     
     offset_x = (win_w - new_w) // 2
     offset_y = (win_h - new_h) // 2
@@ -1270,8 +1233,8 @@ def draw_screen_scaled():
     real_window.fill((0, 0, 0))
 
     # 2. Calculamos el tamaño final
-    new_w = int(CONFIG["GAME_WIDTH"] * scale_factor)
-    new_h = int(CONFIG["GAME_HEIGHT"] * scale_factor)
+    new_w = int(cfg.CONFIG["GAME_WIDTH"] * scale_factor)
+    new_h = int(cfg.CONFIG["GAME_HEIGHT"] * scale_factor)
 
     # 3. ESCALADO
     if scale_factor != 1.0:
@@ -1286,72 +1249,72 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
     # Usamos global para asegurarnos de que accede a las instancias y variables
     global CURRENT_STATE, save_load_ui, language_ui, system_menu
     
-    # --- MENÚ FILE (ARCHIVO) ---
-    if menu_title == MENU_TEXTS.get("FILE_TITLE", "FILE"):
-        if item_label == MENU_TEXTS.get("SAVE_CMD", "SAVE"):
+    # --- MENU FILE ---
+    if menu_title == cfg.MENU_TEXTS.get("FILE_TITLE", "FILE"):
+        if item_label == cfg.MENU_TEXTS.get("SAVE_CMD", "SAVE"):
             # Usamos el método open_menu que ya prepara todo
             save_load_ui.open_menu("SAVE", lambda: CURRENT_STATE)
             set_state(GameState.SAVELOAD) # <--- CORREGIDO: Era change_state
             system_menu.close_all()
             
-        elif item_label == MENU_TEXTS.get("LOAD_CMD", "LOAD"):
+        elif item_label == cfg.MENU_TEXTS.get("LOAD_CMD", "LOAD"):
             save_load_ui.open_menu("LOAD", lambda: CURRENT_STATE)
             set_state(GameState.SAVELOAD) # <--- CORREGIDO: Era change_state
             system_menu.close_all()
 
-    # --- MENÚ HELP (AYUDA) ---
-    elif menu_title == MENU_TEXTS.get("HELP_TITLE", "HELP"):
-        if item_label == MENU_TEXTS.get("DEBUG_OPT", "DEBUG"):
-            CONFIG["DEBUG_MODE"] = not CONFIG.get("DEBUG_MODE", False)
-        elif item_label == MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"):
-            CONFIG["SHOW_HINTS_ONLY"] = not CONFIG.get("SHOW_HINTS_ONLY", False)
-        elif item_label == MENU_TEXTS.get("NO_OPT", "OFF"):
-            CONFIG["DEBUG_MODE"] = False
-            CONFIG["SHOW_HINTS_ONLY"] = False
+    # --- MENU HELP ---
+    elif menu_title == cfg.MENU_TEXTS.get("HELP_TITLE", "HELP"):
+        if item_label == cfg.MENU_TEXTS.get("DEBUG_OPT", "DEBUG"):
+            cfg.CONFIG["DEBUG_MODE"] = not cfg.CONFIG.get("DEBUG_MODE", False)
+        elif item_label == cfg.MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"):
+            cfg.CONFIG["SHOW_HINTS_ONLY"] = not cfg.CONFIG.get("SHOW_HINTS_ONLY", False)
+        elif item_label == cfg.MENU_TEXTS.get("NO_OPT", "OFF"):
+            cfg.CONFIG["DEBUG_MODE"] = False
+            cfg.CONFIG["SHOW_HINTS_ONLY"] = False
 
-    # --- MENÚ TEXT (TEXTO) ---
-    elif menu_title == MENU_TEXTS.get("TEXT_TITLE", "TEXT"):
+    # --- MENU TEXT ---
+    elif menu_title == cfg.MENU_TEXTS.get("TEXT_TITLE", "TEXT"):
         # 1. CAMBIO DE VELOCIDAD
-        if context_label == MENU_TEXTS.get("VEL_LABEL", "SPEED"):
+        if context_label == cfg.MENU_TEXTS.get("VEL_LABEL", "SPEED"):
             vel_map = {
-                MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[0]: "SPEED_SLOW",
-                MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[1]: "SPEED_MEDIUM",
-                MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[2]: "SPEED_FAST"
+                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[0]: "SPEED_SLOW",
+                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[1]: "SPEED_MEDIUM",
+                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[2]: "SPEED_FAST"
             }
-            TEXT_CONFIG["CURRENT_SPEED"] = vel_map.get(item_label, "SPEED_MEDIUM")
+            cfg.TEXT_CONFIG["CURRENT_SPEED"] = vel_map.get(item_label, "SPEED_MEDIUM")
             
-            # (Opcional) Feedback también para la velocidad
+            # (Optional) Feedback also for speed
             prefix = GAME_MSGS.get("MSG_SPEED", "Vel: ")
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
             
         # 2. CAMBIO DE TAMAÑO (LO QUE PEDISTE)
-        elif context_label == MENU_TEXTS.get("SIZE_LABEL", "SIZE"):
+        elif context_label == cfg.MENU_TEXTS.get("SIZE_LABEL", "SIZE"):
             size_map = {
-                MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[0]: "SIZE_SMALL",
-                MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[1]: "SIZE_MEDIUM",
-                MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[2]: "SIZE_LARGE"
+                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[0]: "SIZE_SMALL",
+                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[1]: "SIZE_MEDIUM",
+                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[2]: "SIZE_LARGE"
             }
-            TEXT_CONFIG["CURRENT_SIZE"] = size_map.get(item_label, "SIZE_MEDIUM")
+            cfg.TEXT_CONFIG["CURRENT_SIZE"] = size_map.get(item_label, "SIZE_MEDIUM")
             
-            # --- LÍNEA RESTAURADA ---
+            # --- RESTORED LINE ---
             # Muestra "Tamaño: GRANDE" usando el sistema de mensajes del juego
             prefix = GAME_MSGS.get("MSG_SIZE", "Size: ")
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
-    # --- MENÚ SOUND (SONIDO) ---
-    elif menu_title == MENU_TEXTS.get("SOUND_TITLE", "SOUND"):
-        if item_label == MENU_TEXTS.get("YES_OPT", "ON"):
+    # --- MENU SOUND ---
+    elif menu_title == cfg.MENU_TEXTS.get("SOUND_TITLE", "SOUND"):
+        if item_label == cfg.MENU_TEXTS.get("YES_OPT", "ON"):
             pygame.mixer.music.unpause()
             # Aquí podrías activar efectos de sonido también
         else:
             pygame.mixer.music.pause()
 
-    # --- MENÚ CURSOR ---
-    elif menu_title == MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"):
-        if item_label == MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"):
-            CONFIG["CURSOR_STYLE"] = "CLASSIC"
+    # --- MENU CURSOR ---
+    elif menu_title == cfg.MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"):
+        if item_label == cfg.MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"):
+            cfg.CONFIG["CURSOR_STYLE"] = "CLASSIC"
         else:
-            CONFIG["CURSOR_STYLE"] = "MODERN"
+            cfg.CONFIG["CURSOR_STYLE"] = "MODERN"
             
 # --- ¡IMPORTANTE! CONECTAR LA FUNCIÓN AL MENÚ ---
 system_menu.set_callback(logic_system_menu_action)
@@ -1453,12 +1416,12 @@ def handle_input_explore(event):
                 inventory.active_item = clicked_inv_item
                 print(f"[INVENTARIO] Seleccionado para {sel_verb}: {clicked_inv_item.id}")
                 
-                if CONFIG["ENABLE_SOUND"] and "step" in SOUNDS: SOUNDS["step"].play()
+                if cfg.CONFIG["ENABLE_SOUND"] and "step" in cfg.SOUNDS: cfg.SOUNDS["step"].play()
 
             return
 
     # --- 5. GESTIÓN DE ESCENA (MOVIMIENTO Y HOTSPOTS) ---
-    if screen_my < GAME_AREA_HEIGHT:               
+    if screen_my < cfg.GAME_AREA_HEIGHT:
         # 1. CALCULAMOS LAS COORDENADAS DEL MUNDO AQUÍ (Para que existan siempre)
         # Como ya definimos current_scene arriba, esto funciona perfecto:
         world_mx = screen_mx + current_scene.camera_x        
@@ -1480,7 +1443,7 @@ def handle_input_explore(event):
             if button == 1 or button == 3:
                 current_time = pygame.time.get_ticks()
                 # Si el tiempo entre clics es menor al umbral, hacemos salida rápida
-                if current_time - LAST_EXIT_CLICK_TIME < CONFIG["DOUBLE_CLICK_MS"]:
+                if current_time - LAST_EXIT_CLICK_TIME < cfg.CONFIG["DOUBLE_CLICK_MS"]:
                     handle_scene_switch(hovered_exit)
                     inventory.active_item = None
                     LAST_EXIT_CLICK_TIME = 0 
@@ -1599,7 +1562,7 @@ def apply_darkness_effect(screen, radio_luz):
     transparente alrededor del ratón usando colorkey.
     """
     # 1. Crear una superficie del tamaño de la pantalla
-    oscuridad = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+    oscuridad = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
     oscuridad.fill((0, 0, 0)) # Rellenar de negro total
     
     # 2. Si hay radio de luz, recortamos el agujero
@@ -1639,7 +1602,7 @@ def draw_dialogue_mode(screen):
         draw_overlay_text(screen, SCREEN_OVERLAY_TEXT, speaker=CURRENT_SPEAKER_REF, camera_x=cam_x)
         
     # 4. Barra inferior negra
-    pygame.draw.rect(screen, (85, 85, 68), (0, CONFIG["GAME_HEIGHT"] - CONFIG["BOTTOM_MARGIN"], CONFIG["GAME_WIDTH"], CONFIG["BOTTOM_MARGIN"]))   
+    pygame.draw.rect(screen, (85, 85, 68), (0, cfg.CONFIG["GAME_HEIGHT"] - cfg.CONFIG["BOTTOM_MARGIN"], cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["BOTTOM_MARGIN"]))   
     
 
 def draw_explore_mode(screen):
@@ -1669,9 +1632,9 @@ def draw_explore_mode(screen):
     current_scene.draw_ambient(screen, layer_filter="front")
 
     # 5. DEBUG / UI (SIEMPRE LO ÚLTIMO)
-    if CONFIG["DEBUG_MODE"] and not CONFIG["SHOW_HINTS_ONLY"]:
+    if cfg.CONFIG["DEBUG_MODE"] and not cfg.CONFIG["SHOW_HINTS_ONLY"]:
         draw_debug_overlay(screen, current_scene, player, movement)
-    elif CONFIG["SHOW_HINTS_ONLY"]:
+    elif cfg.CONFIG["SHOW_HINTS_ONLY"]:
         draw_hints_overlay(screen, current_scene, current_scene.camera_x)
 
     # Lógica de Oscuridad (Si la escena es oscura)
@@ -1804,11 +1767,11 @@ def draw_explore_mode(screen):
         inventory.draw(screen)
         textbox.draw(screen)        
         # Tapa inferior decorativa (el borde de abajo del todo)
-        pygame.draw.rect(screen, (85, 85, 68), (0, CONFIG["GAME_HEIGHT"] - CONFIG["BOTTOM_MARGIN"], CONFIG["GAME_WIDTH"], CONFIG["BOTTOM_MARGIN"]))
+        pygame.draw.rect(screen, (85, 85, 68), (0, cfg.CONFIG["GAME_HEIGHT"] - cfg.CONFIG["BOTTOM_MARGIN"], cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["BOTTOM_MARGIN"]))
     else:
         # MODO CUTSCENE: Dibujamos una CAJA NEGRA tapando toda la zona inferior
         # La zona de UI empieza justo donde acaba el área de juego (GAME_AREA_HEIGHT)
-        rect_ui = pygame.Rect(0, GAME_AREA_HEIGHT, CONFIG["GAME_WIDTH"], UI_HEIGHT)
+        rect_ui = pygame.Rect(0, cfg.GAME_AREA_HEIGHT, cfg.CONFIG["GAME_WIDTH"], cfg.UI_HEIGHT)
         pygame.draw.rect(screen, (0, 0, 0), rect_ui)
 
     system_menu.draw(screen)  
@@ -1829,10 +1792,10 @@ def draw_hints_overlay(screen, scene, camera_x):
     Dibuja etiquetas sobre objetos y salidas.
     VERSIÓN DEFINITIVA: Líneas detrás del texto y posición corregida.
     """
-    if not CONFIG["SHOW_HINTS_ONLY"]:
+    if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
         return
 
-    font = pygame.font.Font(UI_FONT_PATH, 16) 
+    font = pygame.font.Font(cfg.UI_FONT_PATH, 16)
     screen_rect = screen.get_rect()
     
     # 1. LISTA DE ELEMENTOS
@@ -1854,7 +1817,7 @@ def draw_hints_overlay(screen, scene, camera_x):
         elements.append((ex.rect, texto, (255, 100, 100))) 
 
     # 2. DIBUJAR
-    overlay = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
+    overlay = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
     
     for rect, text, color in elements:
         screen_x = rect.x - int(camera_x)
@@ -1891,9 +1854,9 @@ def draw_hints_overlay(screen, scene, camera_x):
             
             # CLAMPING (Mantener dentro de pantalla)
             if bg_rect.left < 5: bg_rect.left = 5
-            if bg_rect.right > CONFIG["GAME_WIDTH"] - 5: bg_rect.right = CONFIG["GAME_WIDTH"] - 5
+            if bg_rect.right > cfg.CONFIG["GAME_WIDTH"] - 5: bg_rect.right = cfg.CONFIG["GAME_WIDTH"] - 5
             if bg_rect.top < 5: bg_rect.top = 5 
-            if bg_rect.bottom > GAME_AREA_HEIGHT - 5: bg_rect.bottom = GAME_AREA_HEIGHT - 5
+            if bg_rect.bottom > cfg.GAME_AREA_HEIGHT - 5: bg_rect.bottom = cfg.GAME_AREA_HEIGHT - 5
             
             # --- LÍNEA CONECTORA (¡DIBUJAR ANTES QUE LA CAJA!) ---
             # Solo dibujamos línea si la etiqueta NO está tocando el borde del objeto
@@ -1925,8 +1888,8 @@ def draw_hints_overlay(screen, scene, camera_x):
 # LÓGICA DE GUARDADO/CARGADO (Inyectada a la UI)
 # ---------------------------------------------------------
 def logic_save_game(filename):
-    if not os.path.exists(SAVE_GAME_DIR): 
-        os.makedirs(SAVE_GAME_DIR, exist_ok=True)
+    if not os.path.exists(cfg.SAVE_DIR): 
+        os.makedirs(cfg.SAVE_DIR, exist_ok=True)
     
     # Recopilar datos usando las variables GLOBALES de main.py
     inv_ids = [item.id for item in inventory.items]        
@@ -1940,7 +1903,7 @@ def logic_save_game(filename):
         "scene": scene_id_to_save, 
         "position": (int(player.rect.centerx), int(player.rect.bottom)),
         "inventory": inv_ids, 
-        "char_id": PLAYER_CONFIG["CHAR_ID"]
+        "char_id": cfg.PLAYER_CONFIG["CHAR_ID"]
     }
     
     try:
@@ -1963,8 +1926,8 @@ def logic_load_game(filename):
         GAME_STATE.update(data.get("game_state", {}))
         
         # 2. Restaurar Personaje
-        PLAYER_CONFIG["CHAR_ID"] = data.get("char_id", "Gilo")
-        player.swap_character(PLAYER_CONFIG["CHAR_ID"])
+        cfg.PLAYER_CONFIG["CHAR_ID"] = data.get("char_id", "Gilo")
+        player.swap_character(cfg.PLAYER_CONFIG["CHAR_ID"])
         
         # 3. Restaurar Escena
         saved_scene_raw = data.get("scene", "AVDA_PAZ")
@@ -1985,7 +1948,7 @@ def logic_load_game(filename):
             s = scene_manager.current_scene.get_dynamic_scale(player.rect.bottom)
             player.set_scale(s)
             # Centrar cámara
-            cam_x = player.rect.centerx - (CONFIG["GAME_WIDTH"] // 2)
+            cam_x = player.rect.centerx - (cfg.CONFIG["GAME_WIDTH"] // 2)
             scene_manager.current_scene.camera_x = max(0, cam_x)
 
         # 5. Inventario
@@ -2154,14 +2117,14 @@ while running:
         elif CURRENT_STATE == GameState.EXPLORE:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F1:
-                    if CONFIG["DEBUG_MODE"] and CONFIG["SHOW_HINTS_ONLY"]:
-                        CONFIG["DEBUG_MODE"] = False; CONFIG["SHOW_HINTS_ONLY"] = False
+                    if cfg.CONFIG["DEBUG_MODE"] and cfg.CONFIG["SHOW_HINTS_ONLY"]:
+                        cfg.CONFIG["DEBUG_MODE"] = False; cfg.CONFIG["SHOW_HINTS_ONLY"] = False
                     else: enable_game_help()
                 elif event.key == pygame.K_F2: system_menu.toggle()
                 elif event.key == pygame.K_F3:
-                    if CONFIG["DEBUG_MODE"] and not CONFIG["SHOW_HINTS_ONLY"]: CONFIG["DEBUG_MODE"] = False
+                    if cfg.CONFIG["DEBUG_MODE"] and not cfg.CONFIG["SHOW_HINTS_ONLY"]: cfg.CONFIG["DEBUG_MODE"] = False
                     else: enable_debug()
-                elif event.key == pygame.K_F4: CONFIG["SHOW_WALKABLE_MASK"] = not CONFIG["SHOW_WALKABLE_MASK"]
+                elif event.key == pygame.K_F4: cfg.CONFIG["SHOW_WALKABLE_MASK"] = not cfg.CONFIG["SHOW_WALKABLE_MASK"]
             handle_input_explore(event)
 
     # ------------------------------------------
@@ -2189,8 +2152,8 @@ while running:
         
         # --- [CORRECCIÓN] SINCRONIZACIÓN GLOBAL PARA LIP SYNC DE NPCs ---
         # Esto permite que los AnimatedHotspots (como la ventana) sepan que deben parar de hablar
-        GLOBAL_STATE["screen_text"] = SCREEN_OVERLAY_TEXT
-        GLOBAL_STATE["current_speaker"] = CURRENT_SPEAKER_REF
+        cfg.GLOBAL_STATE["screen_text"] = SCREEN_OVERLAY_TEXT
+        cfg.GLOBAL_STATE["current_speaker"] = CURRENT_SPEAKER_REF
         
         current_scene = scene_manager.get_current_scene()        
         if current_scene:
@@ -2214,8 +2177,8 @@ while running:
                 stop_scene_music()
         
         # Sincronización Global
-        GLOBAL_STATE["screen_text"] = SCREEN_OVERLAY_TEXT
-        GLOBAL_STATE["current_speaker"] = CURRENT_SPEAKER_REF
+        cfg.GLOBAL_STATE["screen_text"] = SCREEN_OVERLAY_TEXT
+        cfg.GLOBAL_STATE["current_speaker"] = CURRENT_SPEAKER_REF
         
         # Gestión de temporizadores de texto
         if TEXT_DISPLAY_TIMER > 0:
@@ -2308,8 +2271,8 @@ while running:
     # 2. Escalamos la imagen del juego (screen) a la ventana (real_window)
     if scale_factor != 1.0:
         # Calculamos el tamaño objetivo
-        target_w = int(CONFIG["GAME_WIDTH"] * scale_factor)
-        target_h = int(CONFIG["GAME_HEIGHT"] * scale_factor)
+        target_w = int(cfg.CONFIG["GAME_WIDTH"] * scale_factor)
+        target_h = int(cfg.CONFIG["GAME_HEIGHT"] * scale_factor)
         
         # USAMOS SMOOTHSCALE: Esto aplica el filtro bilineal/bicúbico para que
         # los gráficos se vean suaves y no pixelados al estirar la imagen.

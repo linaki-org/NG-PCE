@@ -4,14 +4,10 @@ import math
 import heapq
 import gc
 import json
-import yaml 
+import yaml
 
 # Imports desde CONFIG (Raíz)
-from config import (
-    CONFIG, UI_HEIGHT, GAME_AREA_HEIGHT, ITEM_NAMES, OBJ_DESCS, GAME_MSGS, 
-    GLOBAL_STATE, UI_FONT_PATH, SOUNDS, MENU_TEXTS, TITLE_TEXTS, 
-    CREDITS_TEXT, CHAR_DEFS, TEXT_CONFIG, VERBS_LOCALIZED, SCENE_NAMES
-)
+import config as cfg
 from engine.resources import RES_MANAGER
 from scenes.variables import GAME_STATE
 
@@ -44,10 +40,10 @@ def get_sharp_font(base_size):
     global scale_factor
     real_size = int(base_size * scale_factor)
     if real_size < 1: real_size = 1
-    key = (UI_FONT_PATH, real_size)
+    key = (cfg.UI_FONT_PATH, real_size)
     if key not in SHARP_FONT_CACHE:
         try:
-            SHARP_FONT_CACHE[key] = pygame.font.Font(UI_FONT_PATH, real_size)
+            SHARP_FONT_CACHE[key] = pygame.font.Font(cfg.UI_FONT_PATH, real_size)
         except:
             SHARP_FONT_CACHE[key] = pygame.font.SysFont("arial", real_size)
     return SHARP_FONT_CACHE[key]
@@ -86,8 +82,8 @@ def get_virtual_mouse_pos():
     mouse_x, mouse_y = pygame.mouse.get_pos()
     virtual_x = (mouse_x - offset_x) / scale_factor
     virtual_y = (mouse_y - offset_y) / scale_factor
-    virtual_x = max(0, min(CONFIG["GAME_WIDTH"] - 1, int(virtual_x)))
-    virtual_y = max(0, min(CONFIG["GAME_HEIGHT"] - 1, int(virtual_y)))
+    virtual_x = max(0, min(cfg.CONFIG["GAME_WIDTH"] - 1, int(virtual_x)))
+    virtual_y = max(0, min(cfg.CONFIG["GAME_HEIGHT"] - 1, int(virtual_y)))
     return virtual_x, virtual_y
 
 # ==========================================
@@ -129,15 +125,15 @@ class Scene:
         self.pathfinder = None
         self.hotspots = HotspotManager()
         self.camera_x = 0
-        self.scene_width = CONFIG["GAME_WIDTH"]
+        self.scene_width = cfg.CONFIG["GAME_WIDTH"]
         self.ambient_data = []  
         self.ambient_anims = [] 
         self.lightmap_file = lightmap_file   
         self.lightmap_surface = None         
 
     def _draw_layer_group(self, screen, layer_group):
-        screen_h = screen.get_height() - UI_HEIGHT
-        screen_w = CONFIG["GAME_WIDTH"]
+        screen_h = screen.get_height() - cfg.UI_HEIGHT
+        screen_w = cfg.CONFIG["GAME_WIDTH"]
         auto_layer_index = self.auto_scroll_config[0] if self.auto_scroll_config else -1
         auto_offset_val = self.auto_scroll_offset_x if self.auto_scroll_config else 0
         
@@ -159,7 +155,7 @@ class Scene:
                  current_draw_x += img_w
 
     def draw_background_layers(self, screen):
-        if CONFIG.get("SHOW_WALKABLE_MASK", False):
+        if cfg.CONFIG.get("SHOW_WALKABLE_MASK", False):
             if self.walkable_area and self.walkable_area.mask:
                 screen.blit(self.walkable_area.mask, (-int(self.camera_x), 0))
             else:
@@ -168,7 +164,7 @@ class Scene:
         self._draw_layer_group(screen, self.parallax_layers_back)
 
     def draw_foreground_layers(self, screen):
-        if CONFIG.get("SHOW_WALKABLE_MASK", False): return
+        if cfg.CONFIG.get("SHOW_WALKABLE_MASK", False): return
         self._draw_layer_group(screen, self.parallax_layers_front)
 
     def get_dynamic_scale(self, current_y):
@@ -188,7 +184,7 @@ class Scene:
         self.parallax_layers = []
         self.parallax_layers_back = []
         self.parallax_layers_front = []
-        target_h = GAME_AREA_HEIGHT        
+        target_h = cfg.GAME_AREA_HEIGHT
 
         if self.parallax_paths and self.parallax_factors:
             ground_index = -1
@@ -196,7 +192,7 @@ class Scene:
             else: ground_index = len(self.parallax_factors) - 1
 
             for i, file_name in enumerate(self.parallax_paths):
-                full_path = os.path.join("backgrounds", file_name)
+                full_path = os.path.join(cfg.BG_DIR, file_name)
                 try:
                     if os.path.exists(full_path): raw_img = pygame.image.load(full_path).convert_alpha()
                     else: raise FileNotFoundError(f"No existe {file_name}")
@@ -206,7 +202,7 @@ class Scene:
                 try:
                     aspect_ratio = raw_img.get_width() / raw_img.get_height()
                     new_w = int(target_h * aspect_ratio)
-                    if new_w < CONFIG["GAME_WIDTH"]: new_w = CONFIG["GAME_WIDTH"]
+                    if new_w < cfg.CONFIG["GAME_WIDTH"]: new_w = cfg.CONFIG["GAME_WIDTH"]
                     final_img = pygame.transform.scale(raw_img, (new_w, target_h))
                     speed = self.parallax_factors[i]
                     layer_data = {"image": final_img, "factor": speed} 
@@ -218,35 +214,35 @@ class Scene:
                         self.parallax_layers_front.append(layer_data)
                 except Exception as e: print(f"[FATAL ERROR] {e}")
         else:
-            full_bg_path = os.path.join("backgrounds", self.bg_file)
+            full_bg_path = os.path.join(cfg.BG_DIR, self.bg_file)
             try: 
                 bg_raw = pygame.image.load(full_bg_path).convert()
                 aspect_ratio = bg_raw.get_width() / bg_raw.get_height()
                 target_w = int(target_h * aspect_ratio)
-                if target_w < CONFIG["GAME_WIDTH"]: target_w = CONFIG["GAME_WIDTH"]
+                if target_w < cfg.CONFIG["GAME_WIDTH"]: target_w = cfg.CONFIG["GAME_WIDTH"]
                 bg_final = pygame.transform.scale(bg_raw, (target_w, target_h))
                 layer_data = {"image": bg_final, "factor": 1.0}
                 self.parallax_layers.append(layer_data)
                 self.parallax_layers_back.append(layer_data)
                 self.scene_width = target_w
             except:
-                fallback = pygame.Surface((CONFIG["GAME_WIDTH"], GAME_AREA_HEIGHT)); fallback.fill((50,50,50))
+                fallback = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.GAME_AREA_HEIGHT)); fallback.fill((50,50,50))
                 self.parallax_layers.append({"image": fallback, "factor": 1.0})
                 self.parallax_layers_back.append(self.parallax_layers[0])
-                self.scene_width = CONFIG["GAME_WIDTH"]
+                self.scene_width = cfg.CONFIG["GAME_WIDTH"]
 
         if self.lightmap_file:
-            path = os.path.join("backgrounds", self.lightmap_file)
+            path = os.path.join(cfg.BG_DIR, self.lightmap_file)
             try:
                 raw_lm = pygame.image.load(path).convert()
-                self.lightmap_surface = pygame.transform.scale(raw_lm, (self.scene_width, GAME_AREA_HEIGHT))
+                self.lightmap_surface = pygame.transform.scale(raw_lm, (self.scene_width, cfg.GAME_AREA_HEIGHT))
             except: self.lightmap_surface = None
         else: self.lightmap_surface = None
 
-        self.walkable_area = WalkableArea(self.mask_file, self.scene_width, GAME_AREA_HEIGHT)
+        self.walkable_area = WalkableArea(self.mask_file, self.scene_width, cfg.GAME_AREA_HEIGHT)
         self.walkable_area.load()
-        limit_rect = pygame.Rect(0, 0, self.scene_width, GAME_AREA_HEIGHT)
-        self.pathfinder = Pathfinding(self.walkable_area, grid_size=CONFIG["PATHFINDING_GRID_SIZE"], limit_rect=limit_rect)
+        limit_rect = pygame.Rect(0, 0, self.scene_width, cfg.GAME_AREA_HEIGHT)
+        self.pathfinder = Pathfinding(self.walkable_area, grid_size=cfg.CONFIG["PATHFINDING_GRID_SIZE"], limit_rect=limit_rect)
         
         self.hotspots.hotspots.empty()
         for data in self.hotspot_data:
@@ -254,7 +250,7 @@ class Scene:
             if flag and GAME_STATE.get(flag, False): continue            
             d = data.copy()
             label_key = d.get("label_id") 
-            if label_key and label_key in ITEM_NAMES: d["label"] = ITEM_NAMES[label_key]
+            if label_key and label_key in cfg.ITEM_NAMES: d["label"] = cfg.ITEM_NAMES[label_key]
             
             if "num_frames" in d:
                 nf = d.pop("num_frames") 
@@ -288,13 +284,13 @@ class Scene:
         gc.collect()
 
     def update_camera(self, target_x, dt):
-        screen_w = CONFIG["GAME_WIDTH"]
+        screen_w = cfg.CONFIG["GAME_WIDTH"]
         half_screen = screen_w // 2
         target_cam = target_x - half_screen
         max_scroll = self.scene_width - screen_w
         if max_scroll < 0: max_scroll = 0
         target_clamped = max(0, min(target_cam, max_scroll))
-        smooth_factor = CONFIG["CAMERA_SMOOTHING"] * dt
+        smooth_factor = cfg.CONFIG["CAMERA_SMOOTHING"] * dt
         self.camera_x += (target_clamped - self.camera_x) * smooth_factor
         if abs(self.camera_x - target_clamped) < 0.5: self.camera_x = target_clamped
         if self.auto_scroll_config and self.parallax_layers:
@@ -314,7 +310,7 @@ class Scene:
 
         for hs in self.hotspots.hotspots:
             draw_pos_x = hs.rect.x - int(self.camera_x)
-            if -hs.rect.width < draw_pos_x < CONFIG["GAME_WIDTH"]:
+            if -hs.rect.width < draw_pos_x < cfg.CONFIG["GAME_WIDTH"]:
                 render_list.append({
                     "y": hs.rect.bottom, "type": "hotspot",
                     "func": lambda img=hs.image, x=draw_pos_x, y=hs.rect.y: screen.blit(img, (x, y))
@@ -323,7 +319,7 @@ class Scene:
         for anim in self.ambient_anims:
             if anim.layer == "back":
                 draw_pos_x = anim.rect.x - int(self.camera_x)
-                if -anim.rect.width < draw_pos_x < CONFIG["GAME_WIDTH"]:
+                if -anim.rect.width < draw_pos_x < cfg.CONFIG["GAME_WIDTH"]:
                     render_list.append({
                         "y": anim.rect.bottom, "type": "ambient",
                         "func": lambda a=anim: a.draw(screen, self.camera_x)
@@ -369,7 +365,7 @@ class Hotspot(pygame.sprite.Sprite):
         
         # 1. LÓGICA DE CARGA DE IMAGEN O SUPERFICIE INVISIBLE
         if image_file:
-            loaded_img = RES_MANAGER.get_image(image_file, "hotspots")
+            loaded_img = RES_MANAGER.get_image(image_file, cfg.HTSPT_DIR)
             if loaded_img: self.original_image = loaded_img
             else: self.original_image = pygame.Surface((width, height)); self.original_image.fill((255, 0, 255))
         else:
@@ -456,8 +452,8 @@ class AnimatedHotspot(Hotspot):
             return 
 
         is_talking = False
-        current_text = GLOBAL_STATE["screen_text"]
-        current_speaker = GLOBAL_STATE["current_speaker"]
+        current_text = cfg.GLOBAL_STATE["screen_text"]
+        current_speaker = cfg.GLOBAL_STATE["current_speaker"]
         
         if current_text: 
             if current_speaker == self: is_talking = True
@@ -489,7 +485,7 @@ class AmbientAnimation:
         self.anim_speed = anim_speed
         self.scale = scale
         self.label_id = label_id
-        if self.label_id and self.label_id in ITEM_NAMES: self.label = ITEM_NAMES[self.label_id]
+        if self.label_id and self.label_id in cfg.ITEM_NAMES: self.label = cfg.ITEM_NAMES[self.label_id]
         else: self.label = label_id if label_id else "Ambiente"
         self.name = label_id if label_id else "ambient_obj"
         self.actions = actions if actions else {}
@@ -501,7 +497,7 @@ class AmbientAnimation:
         self.anim_timer = 0
         self.num_frames = num_frames
         
-        full_img = RES_MANAGER.get_image(image_file, "hotspots")     
+        full_img = RES_MANAGER.get_image(image_file, cfg.HTSPT_DIR)
         if full_img:
             sheet_w = full_img.get_width(); sheet_h = full_img.get_height()
             frame_width = sheet_w // num_frames
@@ -549,7 +545,7 @@ class AmbientAnimation:
 
     def draw(self, screen, camera_x):
         draw_x = self.rect.x - int(camera_x)
-        if -self.image.get_width() < draw_x < CONFIG["GAME_WIDTH"]:
+        if -self.image.get_width() < draw_x < cfg.CONFIG["GAME_WIDTH"]:
             screen.blit(self.image, (draw_x, self.rect.y))
 
 class WalkableArea:
@@ -563,7 +559,7 @@ class WalkableArea:
 
     def load(self):
         if self.mask_file:
-            path = os.path.join("backgrounds", self.mask_file)
+            path = os.path.join(cfg.BG_DIR, self.mask_file)
             try:
                 surface = pygame.image.load(path).convert()
                 self.mask = pygame.transform.scale(surface, (self.width, self.height))
@@ -587,7 +583,7 @@ class Pathfinding:
         self.obstacles = []
         
         # OPTIMIZACIÓN: Guardar el modo en una variable local al iniciar
-        self.mode = CONFIG.get("PATHFINDING_TYPE", "EUCLIDEAN") 
+        self.mode = cfg.CONFIG.get("PATHFINDING_TYPE", "EUCLIDEAN")
     
     def heuristic(self, x1, y1, x2, y2):
         # Usar self.mode es más rápido que consultar el diccionario CONFIG cada vez
@@ -693,7 +689,7 @@ class Animation:
         self.current_frame = 0
         self.time_since_last_frame = 0
         
-        full_path = os.path.join("items", spritesheet_file)
+        full_path = os.path.join(cfg.ITEMS_DIR, spritesheet_file)
         try:
             if not os.path.exists(full_path):
                 surf = pygame.Surface((frame_width, frame_height))
@@ -748,20 +744,20 @@ class AnimatedCharacter:
         self.last_scale_ref = 0.0
         self.step_timer = 0
         self.step_interval = 0.35
-        self.step_sound = SOUNDS.get("step")
+        self.step_sound = cfg.SOUNDS.get("step")
         self.idle_timer = 0.0
-        self.idle_threshold = CONFIG["IDLE_COOL_THRESHOLD"] 
+        self.idle_threshold = cfg.CONFIG["IDLE_COOL_THRESHOLD"] 
         self.swap_character(char_id) 
 
     def swap_character(self, char_id):
         # Intentamos obtener el personaje solicitado
-        if char_id in CHAR_DEFS:
-            char_data = CHAR_DEFS[char_id]
+        if char_id in cfg.CHAR_DEFS:
+            char_data = cfg.CHAR_DEFS[char_id]
         else:
             # Si no existe, cogemos EL PRIMERO que haya en la lista (Gilo, Bart, el que sea)
             # Esto evita el KeyError si borras un personaje concreto
             print(f"[WARNING] Character '{char_id}' not found. Loading default fallback.")
-            char_data = list(CHAR_DEFS.values())[0]         
+            char_data = list(cfg.CHAR_DEFS.values())[0]
         self.char_id = char_id 
         self.prefix = char_data["prefix"]
         w = char_data["width"]; h = char_data["height"]
@@ -817,7 +813,7 @@ class AnimatedCharacter:
     
     def update(self, dt, is_moving=False, direction_x=0, direction_y=0, is_talking=False, forced_anim=None, current_scene_ref=None):        
         # --- LÓGICA DE SONIDO DINÁMICO ---
-        if is_moving and CONFIG["ENABLE_SOUND"]:
+        if is_moving and cfg.CONFIG["ENABLE_SOUND"]:
             self.step_timer -= dt
             if self.step_timer <= 0:
                 # 1. Por defecto usamos el sonido estándar
@@ -828,10 +824,10 @@ class AnimatedCharacter:
                     sound_key = current_scene_ref.step_sound_key                
                 
                 # 3. Reproducimos el sonido si existe en el diccionario global
-                if sound_key in SOUNDS: 
-                    SOUNDS[sound_key].play()
-                elif "step" in SOUNDS: # Fallback de seguridad
-                    SOUNDS["step"].play()
+                if sound_key in cfg.SOUNDS:
+                    cfg.SOUNDS[sound_key].play()
+                elif "step" in cfg.SOUNDS: # Fallback de seguridad
+                    cfg.SOUNDS["step"].play()
                                 
                 self.step_timer = self.step_interval
         else:
@@ -900,7 +896,7 @@ class SceneManager:
     def __init__(self):
         self.scenes = {}
         self.current_scene = None
-        self.fade_surface = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+        self.fade_surface = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
         self.fade_surface.fill((0, 0, 0))
         self.last_frame = None 
         self.transition_mode = "IDLE"   
@@ -983,7 +979,7 @@ class SceneManager:
     
     def draw_transition(self, screen):
         if self.transition_mode == "IDLE": return
-        w, h = CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]
+        w, h = cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]
         if "FADE" in self.transition_mode:
             alpha = int(max(0, min(255, self.progress)))
             self.fade_surface.set_alpha(alpha)
@@ -1036,7 +1032,7 @@ class SceneManager:
                 s = new_s.get_dynamic_scale(py)
                 self.player.set_scale(s)
                 
-                screen_w = CONFIG["GAME_WIDTH"]
+                screen_w = cfg.CONFIG["GAME_WIDTH"]
                 target_cam = px - (screen_w // 2)
                 max_scroll = new_s.scene_width - screen_w
                 if max_scroll < 0: max_scroll = 0
@@ -1059,13 +1055,13 @@ class MapSystem:
         self.nodes = []
         self.current_location_node = None
         self.target_node = None
-        self.bg = RES_MANAGER.get_image(bg_file, "backgrounds")
+        self.bg = RES_MANAGER.get_image(bg_file, cfg.BG_DIR)
         
         # Si la imagen de fondo existe, la escalamos al tamaño del juego
         if self.bg:
-            self.bg = pygame.transform.scale(self.bg, (CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+            self.bg = pygame.transform.scale(self.bg, (cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
         else:
-            self.bg = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+            self.bg = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
             self.bg.fill((200, 200, 200))
         
         self.traveling = False
@@ -1078,8 +1074,8 @@ class MapSystem:
     def refresh_map_labels(self):
         """Recarga los textos de los nodos basado en el idioma actual"""
         for node in self.nodes:
-            if node.scene_id in SCENE_NAMES:
-                node.label = SCENE_NAMES[node.scene_id]
+            if node.scene_id in cfg.SCENE_NAMES:
+                node.label = cfg.SCENE_NAMES[node.scene_id]
             else:
                 node.label = node.scene_id 
 
@@ -1277,9 +1273,9 @@ class DialogueSystem:
         self.scroll_offset = 0
         
         # Area principal (calculada dinámicamente con las globales importadas)
-        self.area_y = GAME_AREA_HEIGHT + CONFIG["TEXTBOX_HEIGHT"] + 5
-        self.area_h = CONFIG["VERB_MENU_HEIGHT"] - 10
-        self.area_w = CONFIG["GAME_WIDTH"]
+        self.area_y = cfg.GAME_AREA_HEIGHT + cfg.CONFIG["TEXTBOX_HEIGHT"] + 5
+        self.area_h = cfg.CONFIG["VERB_MENU_HEIGHT"] - 10
+        self.area_w = cfg.CONFIG["GAME_WIDTH"]
         
         # Layout Vertical
         self.cols = 1
@@ -1503,19 +1499,19 @@ class DialogueSystem:
 
 class TitleMenu:
     def __init__(self):        
-        self.start_y = CONFIG["GAME_HEIGHT"] // 2.2
+        self.start_y = cfg.CONFIG["GAME_HEIGHT"] // 2.2
         self.options = []
         self.selected_index = 0
         self.btn_width = 220; self.btn_height = 35; self.btn_spacing = 10
         self.bg = None
-        bg_path = os.path.join("backgrounds", "pycapge_tittle.png")
+        bg_path = os.path.join(cfg.BG_DIR, "pycapge_tittle.png")
         if os.path.exists(bg_path):
-            self.bg = pygame.transform.scale(pygame.image.load(bg_path).convert(), (CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]))
+            self.bg = pygame.transform.scale(pygame.image.load(bg_path).convert(), (cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
         self.refresh_texts()
 
     def refresh_texts(self):
-        lang_label = TITLE_TEXTS.get("LANGUAGE", "LANGUAGE")
-        self.options = [TITLE_TEXTS["NEW_GAME"], TITLE_TEXTS["LOAD_GAME"], lang_label, TITLE_TEXTS["CREDITS"], TITLE_TEXTS["EXIT"]]
+        lang_label = cfg.TITLE_TEXTS.get("LANGUAGE", "LANGUAGE")
+        self.options = [cfg.TITLE_TEXTS["NEW_GAME"], cfg.TITLE_TEXTS["LOAD_GAME"], lang_label, cfg.TITLE_TEXTS["CREDITS"], cfg.TITLE_TEXTS["EXIT"]]
 
     def handle_input(self, event, callbacks):
         if event.type == pygame.KEYDOWN:
@@ -1524,13 +1520,13 @@ class TitleMenu:
             elif event.key in [pygame.K_RETURN, pygame.K_SPACE]: self.execute_selection(callbacks)
         elif event.type == pygame.MOUSEMOTION:
             mx, my = get_virtual_mouse_pos()
-            center_x = CONFIG["GAME_WIDTH"] // 2
+            center_x = cfg.CONFIG["GAME_WIDTH"] // 2
             for i in range(len(self.options)):
                 rect = pygame.Rect(center_x - self.btn_width // 2, self.start_y + i*(self.btn_height+self.btn_spacing), self.btn_width, self.btn_height)
                 if rect.collidepoint(mx, my): self.selected_index = i
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = get_virtual_mouse_pos()
-            center_x = CONFIG["GAME_WIDTH"] // 2
+            center_x = cfg.CONFIG["GAME_WIDTH"] // 2
             for i in range(len(self.options)):
                 rect = pygame.Rect(center_x - self.btn_width // 2, self.start_y + i*(self.btn_height+self.btn_spacing), self.btn_width, self.btn_height)
                 if rect.collidepoint(mx, my): 
@@ -1539,16 +1535,16 @@ class TitleMenu:
     
     def execute_selection(self, callbacks):
         sel = self.options[self.selected_index]
-        if sel == TITLE_TEXTS["NEW_GAME"]: callbacks["new_game"]()
-        elif sel == TITLE_TEXTS["LOAD_GAME"]: callbacks["load_game"]()
-        elif sel == TITLE_TEXTS.get("LANGUAGE", "LANGUAGE"): callbacks["open_lang"]()
-        elif sel == TITLE_TEXTS["CREDITS"]: callbacks["open_credits"]()
-        elif sel == TITLE_TEXTS["EXIT"]: callbacks["exit_game"]()
+        if sel == cfg.TITLE_TEXTS["NEW_GAME"]: callbacks["new_game"]()
+        elif sel == cfg.TITLE_TEXTS["LOAD_GAME"]: callbacks["load_game"]()
+        elif sel == cfg.TITLE_TEXTS.get("LANGUAGE", "LANGUAGE"): callbacks["open_lang"]()
+        elif sel == cfg.TITLE_TEXTS["CREDITS"]: callbacks["open_credits"]()
+        elif sel == cfg.TITLE_TEXTS["EXIT"]: callbacks["exit_game"]()
 
     def draw(self, screen):
         if self.bg: screen.blit(self.bg, (0,0))
         else: screen.fill((20, 20, 40))
-        center_x = CONFIG["GAME_WIDTH"] // 2
+        center_x = cfg.CONFIG["GAME_WIDTH"] // 2
         for i in range(len(self.options)):
             rect = pygame.Rect(center_x - self.btn_width // 2, self.start_y + i * (self.btn_height + self.btn_spacing), self.btn_width, self.btn_height)
             bg_color = (80, 80, 80) if i == self.selected_index else VERB_STYLE["BTN_BG"]
@@ -1560,8 +1556,8 @@ class TitleMenu:
 
     def draw_text_hd(self):
         if not self.bg:
-            draw_text_sharp("Python Classic Adventure Engine", CONFIG["GAME_WIDTH"]//2, 150, 24, (255, 200, 50), align="center", shadow=True)
-        center_x = CONFIG["GAME_WIDTH"] // 2
+            draw_text_sharp("Python Classic Adventure Engine", cfg.CONFIG["GAME_WIDTH"]//2, 150, 24, (255, 200, 50), align="center", shadow=True)
+        center_x = cfg.CONFIG["GAME_WIDTH"] // 2
         for i, opt_text in enumerate(self.options):
             center_y = self.start_y + i * (self.btn_height + self.btn_spacing) + (self.btn_height // 2)
             color = (255, 255, 255) if i == self.selected_index else VERB_STYLE["TEXT_NORMAL"]
@@ -1572,7 +1568,7 @@ class SaveLoadUI:
         self.active = False; self.mode = "SAVE"; self.previous_state = "TITLE"
         self.width = 500; self.height = 450
         self.rect = pygame.Rect(0, 0, self.width, self.height)
-        self.rect.center = (CONFIG["GAME_WIDTH"] // 2, CONFIG["GAME_HEIGHT"] // 2)
+        self.rect.center = (cfg.CONFIG["GAME_WIDTH"] // 2, cfg.CONFIG["GAME_HEIGHT"] // 2)
         self.slots_data = []
         self.scroll_offset = 0; self.visible_slots = 5; self.slot_height = 50; self.slot_spacing = 10
         self.total_slots = 25
@@ -1600,11 +1596,11 @@ class SaveLoadUI:
     def scan_saves(self):
         self.slots_data = []
         # Leemos los textos AQUÍ para que estén actualizados al idioma actual
-        empty_txt = GAME_MSGS.get("SLOT_EMPTY", "Empty Slot")
-        corrupt_txt = GAME_MSGS.get("SLOT_CORRUPT", "Corrupt File")
+        empty_txt = cfg.GAME_MSGS.get("SLOT_EMPTY", "Empty Slot")
+        corrupt_txt = cfg.GAME_MSGS.get("SLOT_CORRUPT", "Corrupt File")
         
         for i in range(self.total_slots):
-            filename = os.path.join("games", f"savegame_{i}.json")
+            filename = os.path.join(cfg.SAVE_DIR, f"savegame_{i}.json")
             display_text = f"Slot {i+1}: {empty_txt}"
             if os.path.exists(filename):
                 try:
@@ -1612,7 +1608,7 @@ class SaveLoadUI:
                         data = json.load(f)
                         date_str = data.get("timestamp", "???")
                         scene_raw = data.get("scene", "???")
-                        scene_display = SCENE_NAMES.get(scene_raw, scene_raw)
+                        scene_display = cfg.SCENE_NAMES.get(scene_raw, scene_raw)
                         display_text = f"{i+1}. {scene_display} [{date_str}]"
                 except: display_text = f"{i+1}. {corrupt_txt}"
             self.slots_data.append({"file": filename, "text": display_text})
@@ -1684,7 +1680,7 @@ class SaveLoadUI:
     def draw_text_hd(self):
         if not self.active: return
         title_key = "SAVE_CMD" if self.mode == "SAVE" else "LOAD_CMD"
-        title = MENU_TEXTS.get(title_key, self.mode) # Uso de .get para evitar crash
+        title = cfg.MENU_TEXTS.get(title_key, self.mode) # Uso de .get para evitar crash
         
         draw_text_sharp(title, self.rect.centerx, self.rect.y + 25, 28, (255, 255, 255), align="center", shadow=True)
         current_y = self.list_area_rect.y
@@ -1693,7 +1689,7 @@ class SaveLoadUI:
             draw_text_sharp(txt, self.list_area_rect.x + 15, current_y + self.slot_height//2, 16, (255,255,255), align="midleft")
             current_y += (self.slot_height + self.slot_spacing)
         
-        close_txt = MENU_TEXTS.get("CLOSE_CMD", "Close")
+        close_txt = cfg.MENU_TEXTS.get("CLOSE_CMD", "Close")
         draw_text_sharp(close_txt, self.close_btn_rect.centerx, self.close_btn_rect.centery, 18, (255,255,255), align="center")
 
 class LanguageUI:
@@ -1704,7 +1700,7 @@ class LanguageUI:
         self.height = 380 
         self.rect = pygame.Rect(0, 0, self.width, self.height)
         # Centramos el rectángulo en pantalla usando la configuración global
-        self.rect.center = (CONFIG["GAME_WIDTH"] // 2, CONFIG["GAME_HEIGHT"] // 2)
+        self.rect.center = (cfg.CONFIG["GAME_WIDTH"] // 2, cfg.CONFIG["GAME_HEIGHT"] // 2)
         
         # Colores
         self.bg_color = (0, 0, 0, 240) 
@@ -1718,9 +1714,9 @@ class LanguageUI:
         self.scrollbar_active_color = (200, 200, 200)
 
         # Fuentes
-        if os.path.exists(UI_FONT_PATH):
-            self.font = pygame.font.Font(UI_FONT_PATH, 18)
-            self.title_font = pygame.font.Font(UI_FONT_PATH, 24)
+        if os.path.exists(cfg.UI_FONT_PATH):
+            self.font = pygame.font.Font(cfg.UI_FONT_PATH, 18)
+            self.title_font = pygame.font.Font(cfg.UI_FONT_PATH, 24)
         else:
             self.font = pygame.font.SysFont("arial", 18)
             self.title_font = pygame.font.SysFont("arial", 24, bold=True)
@@ -1753,7 +1749,7 @@ class LanguageUI:
 
     def scan_languages(self):
         self.languages = []
-        folder = "languages"
+        folder = cfg.LANG_DIR
         if not os.path.exists(folder): os.makedirs(folder)
         try:
             for filename in os.listdir(folder):
@@ -1830,7 +1826,7 @@ class LanguageUI:
                 file_target = lang["file"]
                 
                 # Si el idioma es diferente, ejecutamos el callback de recarga
-                if file_target != GLOBAL_STATE.get("current_lang_file"):
+                if file_target != cfg.GLOBAL_STATE.get("current_lang_file"):
                     try:
                         reload_callback(file_target)
                     except Exception as e:
@@ -1862,7 +1858,7 @@ class LanguageUI:
         if not self.active: return
         
         # Fondo oscuro
-        overlay = pygame.Surface((CONFIG["GAME_WIDTH"], CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
+        overlay = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         screen.blit(overlay, (0,0))
         
@@ -1871,7 +1867,7 @@ class LanguageUI:
         pygame.draw.rect(screen, self.border_color, self.rect, 2)
         
         # Título
-        title_txt = MENU_TEXTS.get("LANG_TITLE", "LANGUAGE")
+        title_txt = cfg.MENU_TEXTS.get("LANG_TITLE", "LANGUAGE")
         t_surf = self.title_font.render(title_txt, True, (255, 255, 255))
         screen.blit(t_surf, (self.rect.centerx - t_surf.get_width()//2, self.rect.y + 25))
         
@@ -1896,7 +1892,7 @@ class LanguageUI:
             )
             
             # Lógica visual
-            is_current = (lang["file"] == GLOBAL_STATE.get("current_lang_file"))
+            is_current = (lang["file"] == cfg.GLOBAL_STATE.get("current_lang_file"))
             is_hover = slot_rect.collidepoint(mx, my) and not self.dragging_scrollbar
             
             # Colores
@@ -1948,7 +1944,7 @@ class LanguageUI:
         c_color = (200, 50, 50) if self.close_btn_rect.collidepoint(mx, my) else (150, 50, 50)
         pygame.draw.rect(screen, c_color, self.close_btn_rect)
         pygame.draw.rect(screen, (255, 255, 255), self.close_btn_rect, 1)
-        close_surf = self.font.render(MENU_TEXTS.get("CLOSE_CMD", "CLOSE"), True, (255, 255, 255))
+        close_surf = self.font.render(cfg.MENU_TEXTS.get("CLOSE_CMD", "CLOSE"), True, (255, 255, 255))
         screen.blit(close_surf, (self.close_btn_rect.centerx - close_surf.get_width()//2, 
                                 self.close_btn_rect.centery - close_surf.get_height()//2))
 
@@ -1977,35 +1973,35 @@ class SystemMenu:
         
         self.menus = [
             {
-                "title": MENU_TEXTS.get("FILE_TITLE", "FILE"),
-                "items": [MENU_TEXTS.get("SAVE_CMD", "SAVE"), MENU_TEXTS.get("LOAD_CMD", "LOAD")],
+                "title": cfg.MENU_TEXTS.get("FILE_TITLE", "FILE"),
+                "items": [cfg.MENU_TEXTS.get("SAVE_CMD", "SAVE"), cfg.MENU_TEXTS.get("LOAD_CMD", "LOAD")],
                 "rect": None, "is_open": False
             },
             {
-                "title": MENU_TEXTS.get("HELP_TITLE", "HELP"),
+                "title": cfg.MENU_TEXTS.get("HELP_TITLE", "HELP"),
                 "items": [
-                    MENU_TEXTS.get("DEBUG_OPT", "DEBUG"),      
-                    MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"),  
-                    MENU_TEXTS.get("NO_OPT", "OFF")          
+                    cfg.MENU_TEXTS.get("DEBUG_OPT", "DEBUG"),
+                    cfg.MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"),
+                    cfg.MENU_TEXTS.get("NO_OPT", "OFF")
                 ],
                 "rect": None, "is_open": False
             },            
             {
-                "title": MENU_TEXTS.get("TEXT_TITLE", "TEXT"),
+                "title": cfg.MENU_TEXTS.get("TEXT_TITLE", "TEXT"),
                 "items": [
-                    {"label": MENU_TEXTS.get("VEL_LABEL", "SPEED"),  "options": MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])},
-                    {"label": MENU_TEXTS.get("SIZE_LABEL", "SIZE"), "options": MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])}
+                    {"label": cfg.MENU_TEXTS.get("VEL_LABEL", "SPEED"),  "options": cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])},
+                    {"label": cfg.MENU_TEXTS.get("SIZE_LABEL", "SIZE"), "options": cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])}
                 ],
                 "rect": None, "is_open": False
             },
             {
-                "title": MENU_TEXTS.get("SOUND_TITLE", "SOUND"),
-                "items": [MENU_TEXTS.get("YES_OPT", "ON"), MENU_TEXTS.get("NO_OPT", "OFF")],
+                "title": cfg.MENU_TEXTS.get("SOUND_TITLE", "SOUND"),
+                "items": [cfg.MENU_TEXTS.get("YES_OPT", "ON"), cfg.MENU_TEXTS.get("NO_OPT", "OFF")],
                 "rect": None, "is_open": False
             },
             {
-                "title": MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"),
-                "items": [MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"), MENU_TEXTS.get("CURSOR_MODERN", "MODERN")],
+                "title": cfg.MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"),
+                "items": [cfg.MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"), cfg.MENU_TEXTS.get("CURSOR_MODERN", "MODERN")],
                 "rect": None, "is_open": False
             }
         ]
@@ -2013,7 +2009,7 @@ class SystemMenu:
         # Recalcular posiciones X
         current_x = 0
         # Ajuste: Si hay muchos menús, dividimos el ancho de pantalla
-        # self.btn_width = CONFIG["GAME_WIDTH"] // len(self.menus) 
+        # self.btn_width = cfg.CONFIG["GAME_WIDTH"] // len(self.menus) 
         
         for i, menu in enumerate(self.menus):
             menu["rect"] = pygame.Rect(current_x, 0, self.btn_width, self.bar_height)
@@ -2131,7 +2127,7 @@ class SystemMenu:
         mx, my = get_virtual_mouse_pos()
         
         # Fondo barra negra
-        pygame.draw.rect(screen, (0,0,0), (0, 0, CONFIG["GAME_WIDTH"], self.bar_height))
+        pygame.draw.rect(screen, (0,0,0), (0, 0, cfg.CONFIG["GAME_WIDTH"], self.bar_height))
         
         for menu in self.menus:
             rect = menu["rect"]
@@ -2227,7 +2223,7 @@ class SystemMenu:
 
 class TextBox:
     def __init__(self):
-        self.rect = pygame.Rect(0, GAME_AREA_HEIGHT, CONFIG["GAME_WIDTH"], CONFIG["TEXTBOX_HEIGHT"])
+        self.rect = pygame.Rect(0, cfg.GAME_AREA_HEIGHT, cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["TEXTBOX_HEIGHT"])
         self.visible = True; self.current_text = ""
     def set_text(self, text): self.current_text = text
     def draw(self, screen): 
@@ -2278,7 +2274,7 @@ class VerbButton:
                 # usamos una dummy si queremos precisión exacta o ajustamos lógica.
                 # Para simplificar y mantener paridad con vedad_absoluta:
                 try: 
-                    dummy_font = pygame.font.Font(UI_FONT_PATH, test_size)
+                    dummy_font = pygame.font.Font(cfg.UI_FONT_PATH, test_size)
                 except:
                     dummy_font = pygame.font.SysFont("arial", test_size)
 
@@ -2291,7 +2287,7 @@ class VerbButton:
                 self.make_truncated(raw_text, max_w)
 
     def make_truncated(self, text, max_w):
-        try: font = pygame.font.Font(UI_FONT_PATH, 11)
+        try: font = pygame.font.Font(cfg.UI_FONT_PATH, 11)
         except: font = pygame.font.SysFont("arial", 11)
         temp_text = text
         while len(temp_text) > 0 and font.size(temp_text + "...")[0] > max_w:
@@ -2302,12 +2298,12 @@ class VerbButton:
     def get_dynamic_font(self, text, max_width, max_height, max_size, min_size):
         size = max_size
         while size >= min_size:
-            try: font = pygame.font.Font(UI_FONT_PATH, size)
+            try: font = pygame.font.Font(cfg.UI_FONT_PATH, size)
             except: font = pygame.font.SysFont("arial", size)
             text_w, text_h = font.size(text)
             if text_w <= max_width: return font, size
             size -= 1
-        return pygame.font.Font(UI_FONT_PATH, min_size), min_size
+        return pygame.font.Font(cfg.UI_FONT_PATH, min_size), min_size
 
     def is_mouse_over(self, mx, my): return self.rect.collidepoint(mx, my)
     
@@ -2361,7 +2357,7 @@ class VerbButton:
 
 class VerbMenu:
     def __init__(self):
-        self.rect = pygame.Rect(0, GAME_AREA_HEIGHT + CONFIG["TEXTBOX_HEIGHT"], CONFIG["GAME_WIDTH"], CONFIG["VERB_MENU_HEIGHT"])
+        self.rect = pygame.Rect(0, cfg.GAME_AREA_HEIGHT + cfg.CONFIG["TEXTBOX_HEIGHT"], cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["VERB_MENU_HEIGHT"])
         self.buttons = []
         # Importamos aquí para evitar referencias circulares si config no está listo al inicio
         self.refresh_verbs()
@@ -2444,11 +2440,11 @@ class InventorySlot:
 
 class Inventory:
     def __init__(self):
-        self.screen_width = CONFIG["GAME_WIDTH"]
+        self.screen_width = cfg.CONFIG["GAME_WIDTH"]
         self.visible = True
         
         # CÁLCULO DINÁMICO (COPIADO DE VERDAD ABSOLUTA)
-        verb_menu_y = GAME_AREA_HEIGHT + CONFIG["TEXTBOX_HEIGHT"]
+        verb_menu_y = cfg.GAME_AREA_HEIGHT + cfg.CONFIG["TEXTBOX_HEIGHT"]
         verb_btn_width = 88; verb_padding = 6; verb_cols = 3
         verb_menu_end_x = 10 + (verb_cols * (verb_btn_width + verb_padding)) - verb_padding
         
@@ -2488,8 +2484,8 @@ class Inventory:
         self.items = []; self.scroll_offset = 0; self.active_item = None
 
     def add_item(self, item_id, name_fallback, img, actions=None, label_id=None):         
-        if label_id and label_id in ITEM_NAMES: final_name = ITEM_NAMES[label_id]
-        else: final_name = ITEM_NAMES.get(item_id, name_fallback)        
+        if label_id and label_id in cfg.ITEM_NAMES: final_name = cfg.ITEM_NAMES[label_id]
+        else: final_name = cfg.ITEM_NAMES.get(item_id, name_fallback)
         # OJO: InventoryItem debe existir (copia la clase de abajo si no la tienes)
         new_item = InventoryItem(item_id, final_name, img, actions, self.slot_size, label_id=label_id)
         self.items.append(new_item)        
@@ -2543,7 +2539,7 @@ class InventoryItem:
         
         # Carga de imagen usando el Gestor de Recursos
         # Asegúrate de que RES_MANAGER está importado al principio de classes.py
-        loaded_img = RES_MANAGER.get_image(image_file, "objects")
+        loaded_img = RES_MANAGER.get_image(image_file, cfg.OBJ_DIR)
         
         if loaded_img:
             # Lógica de escalado para que quepa en el slot (usando slot_size)
@@ -2573,9 +2569,9 @@ class DebugConsole:
         
         # Configuración visual
         self.font_size = 14
-        # Usamos la fuente global UI_FONT_PATH en lugar de Arial
+        # Usamos la fuente global cfg.UI_FONT_PATH en lugar de Arial
         try:
-            self.font = pygame.font.Font(UI_FONT_PATH, self.font_size)
+            self.font = pygame.font.Font(cfg.UI_FONT_PATH, self.font_size)
         except:
             self.font = pygame.font.SysFont("arial", self.font_size)
 
@@ -2623,7 +2619,7 @@ class DebugConsole:
     def handle_event(self, event):
         """Maneja eventos de ratón para arrastrar y hacer scroll"""
         # Si no hay debug, no consumimos eventos
-        if not CONFIG.get("DEBUG_MODE", False) or CONFIG.get("SHOW_HINTS_ONLY", False):
+        if not cfg.CONFIG.get("DEBUG_MODE", False) or cfg.CONFIG.get("SHOW_HINTS_ONLY", False):
             self.dragging = False
             return False
 
@@ -2658,8 +2654,8 @@ class DebugConsole:
 
     def draw(self, screen):
         # Visibilidad
-        if not CONFIG.get("DEBUG_MODE", False): return
-        if CONFIG.get("SHOW_HINTS_ONLY", False): return 
+        if not cfg.CONFIG.get("DEBUG_MODE", False): return
+        if cfg.CONFIG.get("SHOW_HINTS_ONLY", False): return
 
         # 1. Dibujar fondo y Header
         s = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
@@ -2680,7 +2676,7 @@ class DebugConsole:
             header_font = self.font
 
         # Usamos GAME_MSGS si está disponible, sino texto fijo
-        title = GAME_MSGS.get("DEBUG_TITLE", "DEBUG CONSOLE") if 'GAME_MSGS' in globals() else "DEBUG CONSOLE"
+        title = cfg.GAME_MSGS.get("DEBUG_TITLE", "DEBUG CONSOLE") if 'GAME_MSGS' in globals() else "DEBUG CONSOLE"
         h_txt = self.font.render(title, True, (200, 200, 200))
         screen.blit(h_txt, (self.rect.x + 5, self.rect.y + 2))
 
@@ -2724,7 +2720,7 @@ class CreditsWindow:
     def __init__(self):
         self.font_size = 16
         try:
-            self.font = pygame.font.Font(UI_FONT_PATH, self.font_size)
+            self.font = pygame.font.Font(cfg.UI_FONT_PATH, self.font_size)
         except:
             self.font = pygame.font.SysFont("arial", self.font_size)
             
@@ -2735,8 +2731,8 @@ class CreditsWindow:
 
         # Dimensiones y Posición (Centrado)
         w, h = 400, 350
-        x = (CONFIG["GAME_WIDTH"] - w) // 2
-        y = (CONFIG["GAME_HEIGHT"] - h) // 2
+        x = (cfg.CONFIG["GAME_WIDTH"] - w) // 2
+        y = (cfg.CONFIG["GAME_HEIGHT"] - h) // 2
         self.rect = pygame.Rect(x, y, w, h)
         
         # Botón cerrar absoluto (Esquina superior derecha de la ventana)
@@ -2751,7 +2747,7 @@ class CreditsWindow:
         self.drag_offset = (0, 0)
         
         # Cargamos el texto de créditos global
-        self.lines = CREDITS_TEXT.strip().split('\n')
+        self.lines = cfg.CREDITS_TEXT.strip().split('\n')
 
     def show(self):
         self.visible = True
@@ -2833,7 +2829,7 @@ class CreditsWindow:
         # Borde y Título
         pygame.draw.rect(screen, self.border_color, self.rect, 2)
         
-        title_str = GAME_MSGS.get("CREDITS_TITLE", "CREDITS") if 'GAME_MSGS' in globals() else "CREDITS"
+        title_str = cfg.GAME_MSGS.get("CREDITS_TITLE", "CREDITS") if 'GAME_MSGS' in globals() else "CREDITS"
         h_txt = self.font.render(title_str, True, (40, 30, 10))
         screen.blit(h_txt, (self.rect.x + 5, self.rect.y + 2))
 
@@ -2866,7 +2862,7 @@ class MapNode:
     def __init__(self, scene_id, map_x, map_y, spawn_x, spawn_y, icon_file=None):
         self.scene_id = scene_id 
         # Intenta obtener el nombre traducido, si no usa el ID
-        self.label = SCENE_NAMES.get(scene_id, scene_id) 
+        self.label = cfg.SCENE_NAMES.get(scene_id, scene_id)
         
         self.rect = pygame.Rect(map_x - 20, map_y - 20, 40, 40)
         self.center = (map_x, map_y)
@@ -2875,11 +2871,11 @@ class MapNode:
         
         if icon_file:
             # Usamos el gestor de recursos para cargar el pin
-            self.image = RES_MANAGER.get_image(icon_file, "objects")
+            self.image = RES_MANAGER.get_image(icon_file, cfg.OBJ_DIR)
 
 class Movement:
     def __init__(self):
-        self.speed = CONFIG["PLAYER_SPEED"]; self.path = []; self.idx = 0; self.is_moving = False
+        self.speed = cfg.CONFIG["PLAYER_SPEED"]; self.path = []; self.idx = 0; self.is_moving = False
         self.dir_x = 0; self.dir_y = 0; self.callback = None
     
     def set_path(self, path, cb=None):

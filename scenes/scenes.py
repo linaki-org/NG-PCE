@@ -4,9 +4,6 @@ from config import CONFIG
 from scenes.variables import GameState
 from engine.classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM
 
-# =========================================================================
-#  DO NOT TOUCH
-# =========================================================================
 def load_scenes(deps):
     """
     Carga las escenas inyectando las dependencias del main.
@@ -25,7 +22,7 @@ def load_scenes(deps):
     GAME_STATE = deps["GAME_STATE"] 
     PLAYER_CONFIG = deps["PLAYER_CONFIG"]
     
-    # Funciones lógicas
+    # Logic funcs
     smart_move_to = deps["smart_move_to"]
     execute_hotspot_action = deps["execute_hotspot_action"]
     change_player_active = deps["change_player_active"]
@@ -34,7 +31,7 @@ def load_scenes(deps):
     change_state_object = deps["change_state_object"]
     load_and_open_map = deps["load_and_open_map"]
     
-    # Datos y Constantes
+    # Dates and consts
     SCENE_NAMES = deps["SCENE_NAMES"]
     OBJ_DESCS = deps["OBJ_DESCS"]
     ITEM_NAMES = deps["ITEM_NAMES"]

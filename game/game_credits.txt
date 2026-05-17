@@ -1,0 +1,24 @@
+================================
+    ADVENTURE NAME CREDITS
+================================
+
+    Your Credits Here
+
+================================
+    Game Engine CREDITS
+================================
+
+ENGINE & CODE:
+  Garba eduardogarbayo.com
+  zainder.com Programmers
+  riojawebs.com Graphics
+
+SPECIAL THANKS:
+  Python Community
+  Pygame Developers
+  LucasArts (For inspiration)
+  Chir (Indy Java MAGE)
+
+================================
+(CC) 2024-2025 - Garba, Spain
+================================
