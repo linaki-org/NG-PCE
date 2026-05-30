@@ -1,0 +1,14 @@
+kitchen is scene:
+    title: "The Kitchen"
+    image: "kitchen.png"
+
+dish is hotspot of room:
+    title: "The dish"
+    image: "dish.png"
+    @bernard.use with floor:
+        dish.fracture
+        bernard.say "Oh no !"
+
+    @fracture:
+        setState "broken"
+        game.dishIsBroken: true
