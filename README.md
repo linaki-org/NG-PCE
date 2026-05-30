@@ -16,3 +16,17 @@ That is why I decided to tinker with it a lot to perfectly fit my needs. I plan 
 - And a lot more !!
 
 I originally wanted to contribute to the original PyCAPGE project, but as I basically want to completely change the way a game is made, I don't think it'll fit its original education purposes.
+
+## Making a game with NG-PCE
+### Vocabulary
+
+NG-PCE's vocabulary is a combination of PCS-ANS and PyCAPGE vocabulary.
+I thought a lot about it so it is as simple and intuitive as possible.  
+Here is an *as complete as possible* list of the vocabulary we will be using in the documentation and manual:
+
+- A **Game** means the entirety of what you will create. It consists of the scripts, the assets, the language patches, the config files and everything that is specific to your game (the engine, for example is not part of the game)
+- A **Scene** is a sub-part of a **game**. It is the equivalent of a **room** in PCS-ANS. It consists of a background image and can contain **objects**.
+- A **Hotspot** is an object in a **scene** with which the player can interact.
+- An **Item** is anything that can be in the player's inventory.
+- An **Ambient** is an animated object in a **scene** which isn't interactable at all.
+- An **Object** is a generic-term used to design the **hotspots**, the **ambients**, the **animations** and everything like that. It is basically everything that is in a **scene**.

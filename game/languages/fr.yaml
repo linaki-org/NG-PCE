@@ -8,52 +8,52 @@ language_name: "Français"
 #  SYSTÈME DE VERBES - BOÎTE DE VERBES
 # ====================================================================================
 verbs:
-  WALK: "ALLER À"        # <--- CLÉ EN MAJUSCULES
-  OPEN: "OUVRIR"
-  CLOSE: "FERMER"
-  PUSH: "POUSSER"
-  PULL: "TIRER"
-  PICK UP: "PRENDRE"
-  USE: "UTILISER"
-  TALK TO: "PARLER À"   # <--- CLÉ EN MAJUSCULES
-  GIVE: "DONNER"
-  LOOK AT: "REGARDER"
-  WITH: "AVEC"
+  WALK: "Aller à"        # <--- CLÉ EN MAJUSCULES
+  OPEN: "Ouvrir"
+  CLOSE: "Fermer"
+  PUSH: "Pousser"
+  PULL: "Tirer"
+  PICK UP: "Prendre"
+  USE: "Utiliser"
+  TALK TO: "Parler à"   # <--- CLÉ EN MAJUSCULES
+  GIVE: "Donner"
+  LOOK AT: "Mirer"
+  WITH: "avec"
 
 # ====================================================================================
 #  MENU PRINCIPAL - ACTIF AVEC F2
 # ====================================================================================
 menus:
-  FILE_TITLE: "FICHIER"
+  FILE_TITLE: "Charger/Sauver"
   SAVE_CMD: "SAUVEGARDER"
-  LOAD_CMD: "CHARGER"
+  LOAD_CMD: "Charger"
   HELP_TITLE: "AIDE"
   NO_OPT: "NON"
   GAME_HELP_OPT: "AIDE DU JEU"
   DEBUG_OPT: "MODE DEBUG"
   SOUND_TITLE: "SON"
   YES_OPT: "OUI"
-  CURSOR_TITLE: "CURSEUR"
-  CURSOR_CLASSIC: "CLASSIQUE"
-  CURSOR_MODERN: "MODERNE"
-  TEXT_TITLE: "TEXTES"
-  VEL_LABEL: "VIT >"
-  SIZE_LABEL: "TAILLE >"
+  CURSOR_TITLE: "Curseur"
+  CURSOR_CLASSIC: "Classique"
+  CURSOR_MODERN: "Moderne"
+  TEXT_TITLE: "Texte"
+  VEL_LABEL: "Vitesse >"
+  SIZE_LABEL: "Taille >"
   # Listes simples
-  VEL_OPTS: ["LENT", "MOYEN", "RAPIDE"]
-  SIZE_OPTS: ["PETIT", "MOYEN", "GRAND"]
-  LANG_TITLE: "LANGUE"
-  CLOSE_CMD: "FERMER"
+  VEL_OPTS: ["Lent", "Moyen", "Rapide"]
+  SIZE_OPTS: ["Petit", "Moyen", "Grand"]
+  LANG_TITLE: "Langue"
+  CLOSE_CMD: "Fermer"
 
 # ====================================================================================
 #  TITRES - ÉCRAN D'ACCUEIL
 # ====================================================================================
 titles:
-  NEW_GAME: "NOUVELLE PARTIE"
-  LOAD_GAME: "CHARGER UNE PARTIE"
-  LANGUAGE: "LANGUE"
-  CREDITS: "CRÉDITS"
-  EXIT: "QUITTER"
+  NEW_GAME: "Commencer le jeu"
+  LOAD_GAME: "Charger"
+  LANGUAGE: "Langue"
+  CREDITS: "Crédits"
+  EXIT: "Quitter"
 
 # ====================================================================================
 #  MESSAGES SYSTÈME
@@ -127,16 +127,16 @@ items:
   MARK_X: "Marque au sol"
 
   # Personnages (Étiquettes) PNJ
-  NPC_GARBA:  "Garba"
-  NPC_BART:   "Bart"
-  NPC_GILO:   "Gilo"
+  NPC_GARBA:  "Jo"
+  NPC_BART:   "Bob"
+  NPC_GILO:   "Bernard"
 
 # ====================================================================================
 #  SCÈNES : DESCRIPTIONS ET RÉACTIONS (Regarder, Prendre, Pousser...)
 # ====================================================================================
 descriptions:
   # Scène 1
-  SCENE1_INTRO_MSG: "Ceci est un texte de démonstration pour l'utilisateur"
+  SCENE1_INTRO_MSG: "Bienvenue dans le jeu de démonstration NG-PCE"
   BELL_HINT: "Utilise le marteau ici !"
   BELL_MAGIC_USE: "Le son résonne doublement avec la magie !"
   BELL_LOOK: "C'est une cloche vraiment grande."

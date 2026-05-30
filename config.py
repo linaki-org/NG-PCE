@@ -29,6 +29,8 @@ OBJ_DIR="game/assets/objects"
 with open(os.path.join(GAME_DIR, "game_config.json")) as config_file:
     CONFIG = json.load(config_file)
 
+DEFAULT_LANG_FILE=CONFIG["DEFAULT_LANGUAGE"]+".yaml"
+
 with open(os.path.join(GAME_DIR, "char_config.json")) as char_config_file:
     char_config=json.load(char_config_file)
     PLAYER_CONFIG=char_config["PLAYER"]

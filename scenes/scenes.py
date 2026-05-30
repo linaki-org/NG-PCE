@@ -1,8 +1,7 @@
 import os
 from config import CONFIG
-# Desde carpetas hermanas o motor
 from scenes.variables import GameState
-from engine.classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM
+from classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM
 
 def load_scenes(deps):
     """
@@ -38,14 +37,7 @@ def load_scenes(deps):
     CINE_TEXTS = deps["CINE_TEXTS"]
     GAME_MSGS = deps["GAME_MSGS"]
     DIALOGUE_TEXTS = deps["DIALOGUE_TEXTS"]
-    GAME_AREA_HEIGHT = deps["GAME_AREA_HEIGHT"]  
-
-# ================================================================================================================================================= 
-# =================================================================================================================================================
-#  CÓDIGO DE DEFINICIÓN DE ESCENAS (s1, s2, s3...) - TOUCH HERE - Aqui empieza tu trabajo
-# =================================================================================================================================================
-# =================================================================================================================================================
-
+    GAME_AREA_HEIGHT = deps["GAME_AREA_HEIGHT"]
 
 
     # ====================================================================================
@@ -62,7 +54,7 @@ def load_scenes(deps):
         image_file="campana.png", 
         x=480, y=200, 
         walk_to=(480, 330),
-        label_id="BELL",  # "Campana"
+        label_id="BELL",
         hint_message="BELL_HINT", # "¡Usa el martillo aquí!"
         scale=0.1,
         primary_verb="LOOK AT",
@@ -70,19 +62,12 @@ def load_scenes(deps):
             "LOOK AT": "BELL_LOOK", # "Es una campana realmente grande."
             "OPEN":    "BELL_OPEN", # "Es de bronce macizo."
             "PUSH":    "BELL_PUSH", # "¡Ding!"
-            "PULL":    "BELL_PULL", # "¡Dooooooonng! Menudo Badajo."        
-            # La clave del diccionario de acciones debe construirse dinámicamente o dejarse fija si los nombres internos no cambian.
-            # Dado que el engine busca "USE_NOMBREITEM_ON_NOMBREHOTSPOT", y los nombres internos (name="martillo") no cambian con el idioma,
-            # la CLAVE del diccionario puede quedarse fija, pero el TEXTO de respuesta sí se traduce.        
+            "PULL":    "BELL_PULL", # "¡Dooooooonng! Menudo Badajo."
             "USE_MARTILLO_ON_CAMPANA": lambda: game_play_event(
-                texto=OBJ_DESCS["BELL_MAGIC_USE"], # "¡El sonido resuena el doble..."
-                #play_sound="medal",  #sonido de puzzle resuelto. Es un sonido ya definido y cargado.
-                #play_sound="church-bell.ogg", #sonido especial. solo lo uso aqui. sonar la campana
-                play_sound=["church-bell.ogg", "medal"], # tamnbien podemos usar sonidos seguidos en una lista. cargados o no.
+                texto=OBJ_DESCS["BELL_MAGIC_USE"],
+                play_sound=["church-bell.ogg"],
                 flag="puzzle_campana_resuelto",
-                # IMPORTANTE: delete_item busca por NOMBRE DE INVENTARIO (Label).
-                # Usamos la variable para que si traduces "Martillo" a "Hammer", el borrado siga funcionando.
-                delete_item="martillo"  # Martillo
+                delete_item="martillo"
             ),       
         }
     )
@@ -91,7 +76,7 @@ def load_scenes(deps):
         name="martillo", 
         image_file="martillo.png", 
         x=450, y=315, 
-        label_id="HAMMER", # "Martillo"
+        label_id="HAMMER",
         scale=0.08,
         flag_name="martillo_recogido", 
         description="HAMMER_LOOK", # Reusamos la descripción de mirar
@@ -106,6 +91,7 @@ def load_scenes(deps):
     s1.add_exit(x=0, y=0, w=50, h=GAME_AREA_HEIGHT, target_scene="PANORAMIC", spawn_x=1500, spawn_y=400)
     scene_manager.add_scene(s1)
 
+
     # ==========================================
     #  # --- ESCENA 2: Ayuntamiento ---
     # ==========================================
@@ -118,20 +104,20 @@ def load_scenes(deps):
     #  DEFINICIÓN DE LA CINEMÁTICA DEL AYUNTAMIENTO
     def intro_ayuntamiento():
         # Solo ejecutar si NO hemos visto esta intro antes
-        if not GAME_STATE.get("intro_ayuntamiento_vista", False):        
+        if not GAME_STATE.get("intro_ayuntamiento_vista", False):
             acciones = [
-                {"type": "WAIT", "seconds": 1.0},            
-                {"type": "MOVE", "x": 400, "y": 450},            
+                {"type": "WAIT", "seconds": 1.0},
+                {"type": "MOVE", "x": 400, "y": 450},
                 {"type": "FACE", "dir": "camera"},
-                {"type": "WAIT", "seconds": 0.5},            
+                {"type": "WAIT", "seconds": 0.5},
                 # --- AQUÍ USAMOS LOS TEXTOS DEL YAML ---
                 {"type": "SAY", "text": CINE_TEXTS["AYUN_1"], "time": 2.5}, # "Estuve aquí hace..."
                 {"type": "SAY", "text": CINE_TEXTS["AYUN_2"], "time": 2.0}, # "...nada ha cambiado."
-                {"type": "WAIT", "seconds": 0.5},            
+                {"type": "WAIT", "seconds": 0.5},
                 {"type": "FUNC", "func": lambda: GAME_STATE.update({"intro_ayuntamiento_vista": True})}
-            ]        
+            ]
             cutscene_manager.start_cutscene(acciones)
-    s2.on_enter = intro_ayuntamiento 
+    s2.on_enter = intro_ayuntamiento
     # Salidas
     s2.add_exit(x=0, y=0, w=50, h=GAME_AREA_HEIGHT, target_scene="AVDA_PAZ", spawn_x=750, spawn_y=400)
     s2.add_exit(x=750, y=0, w=50, h=GAME_AREA_HEIGHT, target_scene="DARK_ROOM", spawn_x=50, spawn_y=400)

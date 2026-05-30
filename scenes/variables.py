@@ -2,9 +2,6 @@ import config as cfg
 
 GAME_STATE = cfg.GAME_STATE.copy()
 
-# ==========================================
-#  DO NOT TOUCH
-# ==========================================
 class GameState:
     TITLE = "TITLE"
     INTRO = "INTRO"
