@@ -37,6 +37,14 @@ class PCTransformer(Transformer):
             elif isinstance(s, Event):    hotspot.events.append(s)
         return hotspot
 
+    def exit_def(self, items):
+        name, scene_name, statements = str(items[0]), str(items[1]), items[2]
+        exit = Exit(name=name, scene=scene_name)
+        for s in statements:
+            if isinstance(s, PropAssign): exit.properties[s.name] = s.value
+            elif isinstance(s, Event):    exit.events.append(s)
+        return exit
+
     def def_block(self, items):     return items
     def cmd_block(self, items):     return items
     def def_statement(self, items): return items[0]
@@ -70,7 +78,7 @@ class PCTransformer(Transformer):
 
     # Event head variants
     def interaction(self, items):
-        return EventName(actor=str(items[0]), verb=str(items[1]), target=str(items[2]))
+        return EventName(actor="default", verb=str(items[0]), target=str(items[1]))
 
     def verb_only(self, items):
         return EventName(actor=str(items[0]), verb=str(items[1]))
@@ -83,13 +91,14 @@ class PCTransformer(Transformer):
 
     def value(self, items):
         s = str(items[0])
+        print(s)
         if s in ("true", "false"):              return s == "true"
         if s.startswith('"') and s.endswith('"'): return s[1:-1]
         try:    return int(s)
         except ValueError: pass
         try:    return float(s)
         except ValueError: pass
-        return s
+        return DynamicValue(s)
 
 
 

@@ -1,0 +1,45 @@
+town_hall is scene:
+    name: TOWN_HALL
+    bg_img: "ayun.jpg"
+    walk_img: "ayun_bm.jpg"
+    scale_min: 0.1
+    scale_max: 1.8
+    y_min: 230
+    y_max: 400
+    transition: slide_left
+    step_snd: "step_wood"
+    lightmap: "ayun_light.jpg"
+
+window is hotspot of town_hall:
+    label: WINDOW_OLD
+    x: 60
+    y: 90
+    width: 100
+    height: 100
+    walk_x: 110
+    walk_y: 380
+    verb: LOOKAT
+    @lookat:
+        say WINDOW_LOOK
+    @open:
+        say WINDOW_OPEN
+    @use with stone:
+        say WINDOW_STONE
+
+th_ex1 is exit of town_hall:
+    x: 0
+    y: 0
+    w: 50
+    h: GAME_AREA_HEIGHT
+    target: peace_avenue
+    spawn_x: 750
+    spawn_y: 400
+
+th_ex2 is exit of town_hall:
+    x: 750
+    y: 0
+    w: 50
+    h: GAME_AREA_HEIGHT
+    target: dark_room
+    spawn_x: 50
+    spawn_y: 400

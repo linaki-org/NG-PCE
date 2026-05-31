@@ -10,15 +10,7 @@ from classes.commons import (get_sharp_font,
                             scale_factor)
 from classes.resources import RES_MANAGER
 
-VERB_STYLE = {
-    "BG_MENU": (85, 85, 68),
-    "BTN_BG": (68, 68, 68),
-    "BORDER_LIGHT": (102, 102, 102),
-    "BORDER_DARK": (34, 34, 34),
-    "TEXT_NORMAL": (255, 255, 170),
-    "TEXT_HOVER": (255, 100, 100),
-    "TEXT_SELECTED": (255, 255, 255)
-}
+VERB_STYLE = cfg.VERB_STYLE
 DIALOGUE_BTN_STYLE = VERB_STYLE
 
 
@@ -336,9 +328,11 @@ class TitleMenu:
         self.refresh_texts()
 
     def refresh_texts(self):
-        lang_label = cfg.TITLE_TEXTS.get("LANGUAGE", "LANGUAGE")
-        self.options = [cfg.TITLE_TEXTS["NEW_GAME"], cfg.TITLE_TEXTS["LOAD_GAME"], lang_label,
-                        cfg.TITLE_TEXTS["CREDITS"], cfg.TITLE_TEXTS["EXIT"]]
+        lang_label = cfg.tm.get("title", "LANGUAGE")
+        self.options = [cfg.tm.get("title", "NEW_GAME"),
+                        cfg.tm.get("title", "LOAD_GAME"), lang_label,
+                        cfg.tm.get("title", "CREDITS"),
+                        cfg.tm.get("title", "EXIT")]
 
     def handle_input(self, event, callbacks):
         if event.type == pygame.KEYDOWN:
@@ -369,15 +363,15 @@ class TitleMenu:
 
     def execute_selection(self, callbacks):
         sel = self.options[self.selected_index]
-        if sel == cfg.TITLE_TEXTS["NEW_GAME"]:
+        if sel == cfg.tm.get("title", "NEW_GAME"):
             callbacks["new_game"]()
-        elif sel == cfg.TITLE_TEXTS["LOAD_GAME"]:
+        elif sel == cfg.tm.get("title", "LOAD_GAME"):
             callbacks["load_game"]()
-        elif sel == cfg.TITLE_TEXTS.get("LANGUAGE", "LANGUAGE"):
+        elif sel == cfg.tm.get("title", "LANGUAGE"):
             callbacks["open_lang"]()
-        elif sel == cfg.TITLE_TEXTS["CREDITS"]:
+        elif sel == cfg.tm.get("title", "CREDITS"):
             callbacks["open_credits"]()
-        elif sel == cfg.TITLE_TEXTS["EXIT"]:
+        elif sel == cfg.tm.get("title", "EXIT"):
             callbacks["exit_game"]()
 
     def draw(self, screen):
@@ -462,7 +456,7 @@ class SaveLoadUI:
                         data = json.load(f)
                         date_str = data.get("timestamp", "???")
                         scene_raw = data.get("scene", "???")
-                        scene_display = cfg.SCENE_NAMES.get(scene_raw, scene_raw)
+                        scene_display = cfg.tm.get("scene", scene_raw)
                         display_text = f"{i + 1}. {scene_display} [{date_str}]"
                 except:
                     display_text = f"{i + 1}. {corrupt_txt}"
@@ -739,7 +733,7 @@ class LanguageUI:
         pygame.draw.rect(screen, self.border_color, self.rect, 2)
 
         # Título
-        title_txt = cfg.MENU_TEXTS.get("LANG_TITLE", "LANGUAGE")
+        title_txt = cfg.tm.get("menu", "LANG_TITLE", "LANGUAGE")
         t_surf = self.title_font.render(title_txt, True, (255, 255, 255))
         screen.blit(t_surf, (self.rect.centerx - t_surf.get_width() // 2, self.rect.y + 25))
 
@@ -846,38 +840,38 @@ class SystemMenu:
 
         self.menus = [
             {
-                "title": cfg.MENU_TEXTS.get("FILE_TITLE", "FILE"),
-                "items": [cfg.MENU_TEXTS.get("SAVE_CMD", "SAVE"), cfg.MENU_TEXTS.get("LOAD_CMD", "LOAD")],
+                "title": cfg.tm.get("menu", "FILE_TITLE", "FILE"),
+                "items": [cfg.tm.get("menu", "SAVE_CMD", "SAVE"), cfg.tm.get("menu", "LOAD_CMD", "LOAD")],
                 "rect": None, "is_open": False
             },
             {
-                "title": cfg.MENU_TEXTS.get("HELP_TITLE", "HELP"),
+                "title": cfg.tm.get("menu", "HELP_TITLE", "HELP"),
                 "items": [
-                    cfg.MENU_TEXTS.get("DEBUG_OPT", "DEBUG"),
-                    cfg.MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"),
-                    cfg.MENU_TEXTS.get("NO_OPT", "OFF")
+                    cfg.tm.get("menu", "DEBUG_OPT", "DEBUG"),
+                    cfg.tm.get("menu", "GAME_HELP_OPT", "HINTS"),
+                    cfg.tm.get("menu", "NO_OPT", "OFF")
                 ],
                 "rect": None, "is_open": False
             },
             {
-                "title": cfg.MENU_TEXTS.get("TEXT_TITLE", "TEXT"),
+                "title": cfg.tm.get("menu", "TEXT_TITLE", "TEXT"),
                 "items": [
-                    {"label": cfg.MENU_TEXTS.get("VEL_LABEL", "SPEED"),
-                     "options": cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])},
-                    {"label": cfg.MENU_TEXTS.get("SIZE_LABEL", "SIZE"),
-                     "options": cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])}
+                    {"label": cfg.tm.get("menu", "VEL_LABEL", "SPEED"),
+                     "options": cfg.tm.get("menu", "VEL_OPTS", ["SLOW", "MED", "FAST"])},
+                    {"label": cfg.tm.get("menu", "SIZE_LABEL", "SIZE"),
+                     "options": cfg.tm.get("menu", "SIZE_OPTS", ["SMALL", "MED", "LARGE"])}
                 ],
                 "rect": None, "is_open": False
             },
             {
-                "title": cfg.MENU_TEXTS.get("SOUND_TITLE", "SOUND"),
-                "items": [cfg.MENU_TEXTS.get("YES_OPT", "ON"), cfg.MENU_TEXTS.get("NO_OPT", "OFF")],
+                "title": cfg.tm.get("menu", "SOUND_TITLE", "SOUND"),
+                "items": [cfg.tm.get("menu", "YES_OPT", "ON"), cfg.tm.get("menu", "NO_OPT", "OFF")],
                 "rect": None, "is_open": False
             },
             {
-                "title": cfg.MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"),
-                "items": [cfg.MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"),
-                          cfg.MENU_TEXTS.get("CURSOR_MODERN", "MODERN")],
+                "title": cfg.tm.get("menu", "CURSOR_TITLE", "CURSOR"),
+                "items": [cfg.tm.get("menu", "CURSOR_CLASSIC", "CLASSIC"),
+                          cfg.tm.get("menu", "CURSOR_MODERN", "MODERN")],
                 "rect": None, "is_open": False
             }
         ]
@@ -1136,8 +1130,7 @@ class VerbButton:
     def refresh_label(self):
         """Calcula el tamaño de fuente ideal y divide en líneas si es necesario."""
         # Necesitamos VERBS_LOCALIZED. Si no está importado, usamos el ID como fallback
-        from config import VERBS_LOCALIZED
-        raw_text = VERBS_LOCALIZED.get(self.verb_id, self.verb_id)
+        raw_text = cfg.tm.get("verbs", self.verb_id)
         max_w = self.width - 6
 
         font, size = self.get_dynamic_font(raw_text, max_w, self.height, 18, 12)
@@ -1258,10 +1251,9 @@ class VerbMenu:
         self.selected_verb = None
 
     def refresh_verbs(self):
-        from config import VERBS_LOCALIZED, VERB_KEYS
         self.buttons = []
         # Usamos VERB_KEYS si existe para mantener orden, o las keys directas
-        keys = VERB_KEYS if 'VERB_KEYS' in globals() else list(VERBS_LOCALIZED.keys())
+        keys = cfg.tm.verb_keys if 'VERB_KEYS' in globals() else list(cfg.tm.variables["verbs"].keys())
 
         verbs = [k for k in keys if k not in ["WALK", "WITH"]][:9]
 
@@ -1396,10 +1388,10 @@ class Inventory:
         self.active_item = None
 
     def add_item(self, item_id, name_fallback, img, actions=None, label_id=None):
-        if label_id and label_id in cfg.ITEM_NAMES:
-            final_name = cfg.ITEM_NAMES[label_id]
+        if label_id and label_id in cfg.translation_manager.variables["items"]:
+            final_name = cfg.tm.get("items", label_id)
         else:
-            final_name = cfg.ITEM_NAMES.get(item_id, name_fallback)
+            final_name = cfg.tm.get("items", item_id, name_fallback)
         # OJO: InventoryItem debe existir (copia la clase de abajo si no la tienes)
         new_item = InventoryItem(item_id, final_name, img, actions, self.slot_size, label_id=label_id)
         self.items.append(new_item)

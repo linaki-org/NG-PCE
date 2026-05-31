@@ -1,18 +1,11 @@
 import os
 import json
+from gettext import translation
 
 # Los definimos aquí vacíos para poder importarlos desde classes.py y main.py
-ITEM_NAMES = {}
-OBJ_DESCS = {}
-SCENE_NAMES = {}
-GAME_MSGS = {}
+
 SOUNDS = {}
-MENU_TEXTS = {}
-TITLE_TEXTS = {}
-VERBS_LOCALIZED = {}
-VERB_KEYS = []
-CINE_TEXTS = {}      # También suele ser necesario compartir cinemáticas
-DIALOGUE_TEXTS = {}  # También suele ser necesario compartir diálogos
+
 
 GAME_DIR="game"
 ASSETS_DIR="game/assets"
@@ -48,6 +41,7 @@ with open(os.path.join(GAME_DIR, "game_credits.txt")) as credits_file:
 
 
 TEXT_CONFIG = UI_CONFIG["TEXT_STYLE"]
+VERB_STYLE= UI_CONFIG["VERB_STYLE"]
 UI_FONT_PATH=TEXT_CONFIG["FONT_NAME"]
 
 # ================================================
@@ -75,4 +69,6 @@ STEP_TYPES = {
     "step_grass": "step_grass.ogg",
     "step_rug": "step_rug.ogg"
 }
+
+tm=None
 

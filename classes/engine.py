@@ -11,10 +11,6 @@ from classes.commons import TRANSITION_FADE, TRANSITION_ZOOM, draw_text_sharp
 from classes.ui import MapNode
 
 
-# ==========================================
-#  CLASES DEL MOTOR (SCENE, HOTSPOT, ETC)
-# ==========================================
-
 class Scene:
     def __init__(self, scene_id, name, background_image_path, walkable_mask_file=None, 
                 scale_range=(1.0, 1.0), y_range=(0, 600), on_enter=None, on_exit=None,
@@ -175,7 +171,7 @@ class Scene:
             if flag and GAME_STATE.get(flag, False): continue            
             d = data.copy()
             label_key = d.get("label_id") 
-            if label_key and label_key in cfg.ITEM_NAMES: d["label"] = cfg.ITEM_NAMES[label_key]
+            if label_key and label_key in cfg.tm.variables["items"]: d["label"] = cfg.tm.get("items", label_key)
             
             if "num_frames" in d:
                 nf = d.pop("num_frames") 
@@ -273,11 +269,15 @@ class Scene:
         safe_x = max(0, min(int(x), w - 1)); safe_y = max(0, min(int(y), h - 1))        
         return self.lightmap_surface.get_at((safe_x, safe_y))[:3]
 
+
+
 class SceneExit:
     def __init__(self, rect, target_scene, spawn_x, spawn_y):
         self.rect = rect
         self.target_scene = target_scene
         self.spawn_point = (spawn_x, spawn_y)
+
+
 
 class Hotspot(pygame.sprite.Sprite):
     def __init__(self, name, x, y, width=50, height=50, image_file=None, 
@@ -329,6 +329,8 @@ class Hotspot(pygame.sprite.Sprite):
         self.facing = kwargs.get('facing', None)
 
     def is_mouse_over(self, mouse_x, mouse_y): return self.rect.collidepoint(mouse_x, mouse_y)
+
+
 
 class AnimatedHotspot(Hotspot):
     def __init__(self, num_frames=1, anim_speed=150, **kwargs):
@@ -402,6 +404,8 @@ class AnimatedHotspot(Hotspot):
                 self.image = self.frames[0]
                 self.current_frame = 0
 
+
+
 class AmbientAnimation:
     def __init__(self, x, y, image_file, num_frames=1, anim_speed=150, scale=1.0, layer="back", solid=False, 
                  move_to=None, move_speed=50, loop_move=True, label_id=None, actions=None, walk_to=None):
@@ -410,7 +414,7 @@ class AmbientAnimation:
         self.anim_speed = anim_speed
         self.scale = scale
         self.label_id = label_id
-        if self.label_id and self.label_id in cfg.ITEM_NAMES: self.label = cfg.ITEM_NAMES[self.label_id]
+        if self.label_id and self.label_id in cfg.tm.variables["items"]: self.label = cfg.tm.get("items", self.label_id)
         else: self.label = label_id if label_id else "Ambiente"
         self.name = label_id if label_id else "ambient_obj"
         self.actions = actions if actions else {}
@@ -473,6 +477,8 @@ class AmbientAnimation:
         if -self.image.get_width() < draw_x < cfg.CONFIG["GAME_WIDTH"]:
             screen.blit(self.image, (draw_x, self.rect.y))
 
+
+
 class WalkableArea:
     def __init__(self, mask_file, width, height):
         self.mask_file = mask_file
@@ -499,6 +505,8 @@ class WalkableArea:
             if x < 0 or x >= target_mask.get_width() or y < 0 or y >= target_mask.get_height(): return False
             return target_mask.get_at((int(x), int(y)))[0] > 50 
         except: return False
+
+
 
 class Pathfinding:
     def __init__(self, walkable_area, grid_size=15, limit_rect=None): 
@@ -581,12 +589,16 @@ class Pathfinding:
                 open_dict[(nx, ny)] = neighbor
         return None
 
+
+
 class Node:
     def __init__(self, x, y, g=0, h=0, parent=None):
         self.x = x; self.y = y; self.g = g; self.h = h; self.f = g + h; self.parent = parent
     def __lt__(self, other): return self.f < other.f
     def __eq__(self, other): return self.x == other.x and self.y == other.y
     def __hash__(self): return hash((self.x, self.y))
+
+
 
 class HotspotManager:
     def __init__(self): self.hotspots = pygame.sprite.Group()
@@ -603,14 +615,7 @@ class HotspotManager:
         return None
     def draw(self, screen): self.hotspots.draw(screen)
 
-# ==========================================
-#  CLASES DEL JUEGO (PLAYER, UI, ETC)
-# ==========================================
 
-
-# -----------------------------------------------
-# ACTUALIZACIÓN EN CLASE MapSystem (engine/classes.py)
-# -----------------------------------------------
 
 class MapSystem:
     def __init__(self, bg_file):
@@ -637,10 +642,7 @@ class MapSystem:
     def refresh_map_labels(self):
         """Recarga los textos de los nodos basado en el idioma actual"""
         for node in self.nodes:
-            if node.scene_id in cfg.SCENE_NAMES:
-                node.label = cfg.SCENE_NAMES[node.scene_id]
-            else:
-                node.label = node.scene_id 
+            node.label = cfg.tm.get("scenes", node.scene_id)
 
     def open_map(self, current_scene_id):
         self.active = True

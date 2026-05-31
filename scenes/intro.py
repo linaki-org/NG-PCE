@@ -122,7 +122,7 @@ class IntroManager:
     def finish_intro(self):
         self.active = False
         self.set_state(GameState.EXPLORE)
-        self.scene_manager.change_scene("AVDA_PAZ")
+        self.scene_manager.change_scene("peace_avenue")
 
     def handle_input(self):
         self.next_slide()

@@ -41,5 +41,14 @@
     "CURRENT_SIZE":  "SIZE_MEDIUM",
     "FONT_NAME": "game/game_font.ttf",
     "OUTLINE_WIDTH": 2
+  },
+  "VERB_STYLE" : {
+    "BG_MENU": [85, 85, 68],
+    "BTN_BG": [68, 68, 68],
+    "BORDER_LIGHT": [102, 102, 102],
+    "BORDER_DARK": [34, 34, 34],
+    "TEXT_NORMAL": [255, 255, 170],
+    "TEXT_HOVER": [255, 100, 100],
+    "TEXT_SELECTED": [255, 255, 255]
   }
 }

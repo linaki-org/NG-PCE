@@ -41,3 +41,14 @@ class Hotspot:
     scene: str
     properties: dict = field(default_factory=dict)
     events: list = field(default_factory=list)
+
+@dataclass
+class Exit:
+    name: str
+    scene: str
+    properties: dict = field(default_factory=dict)
+    events: list = field(default_factory=list)
+
+@dataclass
+class DynamicValue:
+    value: str

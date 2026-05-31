@@ -16,10 +16,11 @@ pcs_grammar = r"""
     
     start: (_NEWLINE | definition)*
     
-    definition: scene_def | hotspot_def
+    definition: scene_def | hotspot_def | exit_def
     
     scene_def:     NAME "is" "scene" ":" def_block
     hotspot_def:  NAME "is" "hotspot" "of" NAME ":" def_block
+    exit_def: NAME "is" "exit" "of" NAME ":" def_block
     
     def_block: _NEWLINE _INDENT def_statement+ _DEDENT
     
@@ -45,8 +46,9 @@ pcs_grammar = r"""
     event_trigger: "@" event_head ":" cmd_block
 
     event_head: NAME
-               | NAME "." NAME "with" NAME  -> interaction  // @bernard.use with floor
+               | NAME "with" NAME  -> interaction  // @bernard.use with floor
                | NAME "." NAME             -> verb_only    // @bernard.look
+               | NAME "." NAME "with" NAME
     
 """
 

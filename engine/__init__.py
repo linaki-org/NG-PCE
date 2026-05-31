@@ -14,20 +14,20 @@ import datetime
 import yaml
 
 import config as cfg
-from config import ITEM_NAMES, OBJ_DESCS, SCENE_NAMES, GAME_MSGS, TITLE_TEXTS, VERBS_LOCALIZED, CINE_TEXTS, \
-    DIALOGUE_TEXTS, VERB_KEYS
 
 # Scenes imports
 from scenes.variables import GAME_STATE, GameState
 from scenes.intro import IntroManager
 from scenes.ending import EndingManager
-import scenes.scenes as scenes
+import engine.script_loader as loader
 from classes import (
     AnimatedHotspot, AnimatedCharacter, SceneManager, DialogueSystem,
     TitleMenu, SaveLoadUI, LanguageUI, SystemMenu, TextBox, VerbMenu,
     Inventory, DebugConsole, CreditsWindow, MapSystem, Movement, CutsceneManager, update_graphics_metrics,
-    get_sharp_font, draw_text_sharp
+    get_sharp_font, draw_text_sharp, TranslationManager, String
 )
+
+from pcscript import parse_directory
 
 globals().update(cfg.CONFIG)  # Inject all config dict directly in the global dict
 
@@ -53,40 +53,19 @@ def load_translations(filename=cfg.DEFAULT_LANG_FILE):
 # ==========================================
 #  GESTOR DE CAMBIO DE IDIOMA
 # ==========================================
-CURRENT_LANG_FILE = cfg.DEFAULT_LANG_FILE  # Variable para saber cuál tenemos cargado
 
+cfg.tm=TranslationManager(cfg.DEFAULT_LANG_FILE)
 
 # EN main.py
 
 def reload_game_texts(filename):
-    global CURRENT_LANG_FILE, VERB_KEYS
 
-    # 1. Cargar datos
+    # 1. Load translation file
     data = load_translations(filename)
-    CURRENT_LANG_FILE = filename
+    cfg.tm.language = filename
 
-    # 2. Actualizar diccionarios globales (Referencia directa a config.py)
-    ITEM_NAMES.clear()
-    ITEM_NAMES.update(data["items"])
-    OBJ_DESCS.clear()
-    OBJ_DESCS.update(data["descriptions"])
-    SCENE_NAMES.clear()
-    SCENE_NAMES.update(data["scenes"])
-    GAME_MSGS.clear()
-    GAME_MSGS.update(data["system_messages"])
-    VERBS_LOCALIZED.clear()
-    VERBS_LOCALIZED.update(data["verbs"])
-    cfg.MENU_TEXTS.clear()
-    cfg.MENU_TEXTS.update(data["menus"])
-    TITLE_TEXTS.clear()
-    TITLE_TEXTS.update(data["titles"])
-    CINE_TEXTS.clear()
-    CINE_TEXTS.update(data["cinematics"])
-    DIALOGUE_TEXTS.clear()
-    DIALOGUE_TEXTS.update(data.get("dialogues", {}))
-
-    GAME_MSGS["VERB_USE"] = VERBS_LOCALIZED.get("USE", "USE")
-    VERB_KEYS = list(VERBS_LOCALIZED.keys())
+    # 2. Load translation in the manager
+    cfg.tm.load_translation(data)
     cfg.GLOBAL_STATE["current_lang_file"] = filename
 
     print(f"[SYSTEM] Language changed to: {filename}")
@@ -113,24 +92,24 @@ def reload_game_texts(filename):
     if 'scene_manager' in globals() and scene_manager.current_scene:
         current_s = scene_manager.current_scene
         # Nombre escena
-        if current_s.id in SCENE_NAMES: current_s.name = SCENE_NAMES[current_s.id]
+        current_s.name = cfg.tm.get("scenes", current_s.id)
         # Hotspots
         for hs in current_s.hotspots.hotspots:
-            if hasattr(hs, 'label_id') and hs.label_id in ITEM_NAMES:
-                hs.label = ITEM_NAMES[hs.label_id]
-            elif hs.name in ITEM_NAMES:
-                hs.label = ITEM_NAMES[hs.name]
+            if hasattr(hs, 'label_id') and hs.label_id in cfg.tm.variables["items"]:
+                hs.label = cfg.tm.get("items", hs.label_id)
+            elif hs.name in cfg.tm.variables["items"]:
+                hs.label = cfg.tm.get("items", hs.name)
         # Ambientales
         for anim in current_s.ambient_anims:
-            if hasattr(anim, 'label_id') and anim.label_id in ITEM_NAMES: anim.label = ITEM_NAMES[anim.label_id]
+            if hasattr(anim, 'label_id') and anim.label_id in cfg.tm.variables["items"]: anim.label = cfg.tm.get("items", anim.label_id)
 
     # Inventario
     if 'inventory' in globals() and inventory:
         for item in inventory.items:
-            if item.label_id and item.label_id in ITEM_NAMES:
-                item.name = ITEM_NAMES[item.label_id]
-            elif item.id in ITEM_NAMES:
-                item.name = ITEM_NAMES[item.id]
+            if item.label_id and item.label_id in cfg.tm.variables["items"]:
+                item.name = cfg.tm.get("items", item.label_id)
+            elif item.id in cfg.tm.variables["items"]:
+                item.name = cfg.tm.get("items", item.id)
         inventory.update_visible()
 
 
@@ -453,6 +432,12 @@ def load_cursor_images():
             print(f"[ERROR] Error loading cursor{verb}: {e}")
 
 
+def get_scene_name(scene_id):
+    if scene_id not in scene_manager.scenes:
+        return scene_id
+    return scene_manager.scenes.get(scene_id).name
+
+
 # Fíjate que ahora pasamos 'target_surface' que será la ventana final
 def draw_cursor(target_surface, is_active=False):
     global CURRENT_CURSOR_STATE
@@ -741,13 +726,13 @@ intro_manager = IntroManager(
     set_state_callback=set_state,  # Función para cambiar estado
     play_music_callback=play_scene_music,  # Función para tocar música
     scene_manager_ref=scene_manager,  # Objeto scene_manager
-    get_texts_callback=lambda: CINE_TEXTS  # Lambda para obtener textos actuales
+    get_texts_callback=lambda: cfg.tm.variables["cine"]  # Lambda para obtener textos actuales
 )
 # ending está en otro file
 ending_manager = EndingManager(
     set_state_callback=set_state,  # Para volver al Título al acabar
     play_music_callback=play_scene_music,  # Para poner la música de créditos
-    get_texts_callback=lambda: CINE_TEXTS
+    get_texts_callback=lambda: cfg.tm.variables["cine"]
 )
 # Inicializamos el sistema de mapas
 map_system = MapSystem("mapa1.jpg")
@@ -846,7 +831,7 @@ def smart_move_to(target_x, target_y, callback=None):
         CURRENT_ACTION_ANIM = None
     else:
         movement.stop()
-        textbox.set_text(GAME_MSGS["CANNOT_REACH"])
+        textbox.set_text(cfg.tm.get("msgs", "CANNOT_REACH"))
 
 
 def cutscene_face_wrapper(direction):
@@ -927,12 +912,6 @@ def execute_hotspot_action(hotspot, verb):
     # 3. OBTENER LA ACCIÓN Y TRADUCIR
     res = hotspot.actions.get(verb)
 
-    # --- [CORRECCIÓN CLAVE] ---
-    # Traducimos INMEDIATAMENTE si es una cadena de texto.
-    # Esto soluciona que salga "BONFIRE_LOOK" en vez del texto real.
-    if isinstance(res, str):
-        # Busca la clave en OBJ_DESCS. Si no existe, usa la clave tal cual.
-        res = OBJ_DESCS.get(res, res)
     # --------------------------
 
     # CASO A: Es una FUNCIÓN (lambda, etc.)
@@ -980,10 +959,8 @@ def execute_hotspot_action(hotspot, verb):
 
         # Feedback de texto (Traducido si es necesario)
         custom_text = hotspot.actions.get("PICK UP")
-        if isinstance(custom_text, str):
-            custom_text = OBJ_DESCS.get(custom_text, custom_text)
 
-        SCREEN_OVERLAY_TEXT = custom_text if custom_text else f"{GAME_MSGS['PICKED_UP']}{hotspot.label}."
+        SCREEN_OVERLAY_TEXT = custom_text if custom_text else f"{cfg.tm.get("msgs", 'PICKED_UP')}{hotspot.label}."
 
         CURRENT_SPEAKER_REF = player
         CURRENT_TEXT_POS = None
@@ -1000,14 +977,14 @@ def execute_hotspot_action(hotspot, verb):
         # Cálculo de tiempo dinámico según longitud
         TEXT_DISPLAY_TIMER = max(2.0, len(str(res)) * 0.08)
 
-        verb_traducido = VERBS_LOCALIZED.get(verb, verb)
+        verb_traducido = cfg.tm.get("verbs", verb)
         textbox.set_text(f"{verb_traducido} {hotspot.label}")
 
     # CASO D: NO HAY ACCIÓN DEFINIDA
     else:
         # Solo mostrar error si no es caminar
         if verb != "WALK":
-            SCREEN_OVERLAY_TEXT = GAME_MSGS["CANNOT_DO"]
+            SCREEN_OVERLAY_TEXT = cfg.tm.get("msgs", "CANNOT_DO")
             CURRENT_SPEAKER_REF = player
             CURRENT_TEXT_POS = None
             TEXT_DISPLAY_TIMER = 2.0
@@ -1078,7 +1055,7 @@ def crafting(id_item1, id_item2, id_nuevo_item, new_graph_object, flag_a_activar
     GAME_STATE[flag_a_activar] = True
 
     # 4. Mensaje correcto: Usamos name1 y name2 (los ingredientes)
-    texto_combinar = GAME_MSGS["CRAFTING_DONE"].format(name1, name2)
+    texto_combinar = cfg.tm.get("msgs", "CRAFTING_DONE").format(name1, name2)
 
     game_play_event(texto=texto_combinar, play_sound="medal")
 
@@ -1156,7 +1133,7 @@ def change_player_active(nuevo_id):
             break
 
     # 7. Feedback visual/sonoro
-    texto_swap = GAME_MSGS["CHAR_SWAP"].format(nuevo_id)
+    texto_swap = cfg.tm.get("msgs", "CHAR_SWAP").format(nuevo_id)
     game_play_event(texto=texto_swap, play_sound="medal")
     global CURRENT_ACTION_ANIM
     CURRENT_ACTION_ANIM = None
@@ -1184,46 +1161,6 @@ def find_original_definition(item_id):
     print(f"[WARNING] No definition found for ID: {item_id}")
     return "default.png", {}, item_id, None
 
-
-# ====================================================================================
-#  8. DEFINICIÓN DE ESCENAS (Ahora que las funciones existen)
-# ====================================================================================
-# aqui estaban las escenas. ahora en fichero externo.
-# En lugar de definir s1, s2, s3 aquí, creamos el "paquete" de dependencias
-dependencies = {
-    "scene_manager": scene_manager,
-    "player": player,
-    "inventory": inventory,
-    "game_play_event": game_play_event,
-    "play_scene_music": play_scene_music,
-    "stop_scene_music": stop_scene_music,
-    "cutscene_manager": cutscene_manager,
-    "dialogue_system": dialogue_system,
-    "map_system": map_system,
-    "ending_manager": ending_manager,
-    "GAME_STATE": GAME_STATE,
-    "PLAYER_CONFIG": cfg.PLAYER_CONFIG,
-
-    # Funciones lógicas
-    "smart_move_to": smart_move_to,
-    "execute_hotspot_action": execute_hotspot_action,
-    "change_player_active": change_player_active,
-    "crafting": crafting,
-    "play_object_animation": play_object_animation,
-    "change_state_object": change_state_object,
-    "load_and_open_map": load_and_open_map,
-
-    # Textos y diccionarios globales
-    "SCENE_NAMES": SCENE_NAMES,
-    "OBJ_DESCS": OBJ_DESCS,
-    "ITEM_NAMES": ITEM_NAMES,
-    "CINE_TEXTS": CINE_TEXTS,
-    "GAME_MSGS": GAME_MSGS,
-    "DIALOGUE_TEXTS": DIALOGUE_TEXTS,
-    "GAME_AREA_HEIGHT": cfg.GAME_AREA_HEIGHT
-
-}
-scenes.load_scenes(dependencies)
 
 # ==========================================
 #  9. ARRANQUE DEL JUEGO
@@ -1351,7 +1288,7 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             cfg.TEXT_CONFIG["CURRENT_SPEED"] = vel_map.get(item_label, "SPEED_MEDIUM")
 
             # (Optional) Feedback also for speed
-            prefix = GAME_MSGS.get("MSG_SPEED", "Vel: ")
+            prefix = cfg.tm.get("msgs", "MSG_SPEED", "Speed: ")
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
         # 2. CAMBIO DE TAMAÑO (LO QUE PEDISTE)
@@ -1365,7 +1302,7 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
 
             # --- RESTORED LINE ---
             # Muestra "Tamaño: GRANDE" usando el sistema de mensajes del juego
-            prefix = GAME_MSGS.get("MSG_SIZE", "Size: ")
+            prefix = cfg.tm.get("msgs", "MSG_SIZE", "Size: ")
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
     # --- MENU SOUND ---
@@ -1433,8 +1370,7 @@ def handle_input_explore(event):
             if callable(raw_action):
                 raw_action()
             else:
-                desc = raw_action if raw_action else f"{GAME_MSGS['DEFAULT_LOOK']}{clicked_inv_item.name}."
-                if isinstance(desc, str) and desc in OBJ_DESCS: desc = OBJ_DESCS[desc]
+                desc = raw_action if raw_action else f"{cfg.tm.get("msgs", 'DEFAULT_LOOK')}{clicked_inv_item.name}."
                 game_play_event(texto=desc, speaker=player)
 
             verb_menu.clear_selection()
@@ -1457,7 +1393,7 @@ def handle_input_explore(event):
                     if callable(action_reverse):
                         action_reverse()
                     else:
-                        game_play_event(texto=GAME_MSGS["DOES_NOT_WORK"], speaker=player)
+                        game_play_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
 
                 inventory.active_item = None
                 verb_menu.clear_selection()
@@ -1477,7 +1413,6 @@ def handle_input_explore(event):
                 inventory.active_item = None
 
             elif isinstance(action, str) and not force_select:
-                if action in OBJ_DESCS: action = OBJ_DESCS[action]
                 game_play_event(texto=action, speaker=player)
                 verb_menu.clear_selection()
                 inventory.active_item = None
@@ -1572,14 +1507,13 @@ def handle_input_explore(event):
 
                     if callable(response):
                         response()
-                    elif isinstance(response, str):
+                    elif isinstance(response, str) or isinstance(response, String):
                         # Traducción de la respuesta si es texto
-                        if response in OBJ_DESCS: response = OBJ_DESCS[response]
                         game_play_event(texto=response, speaker=player)
                     else:
                         CURRENT_ACTION_ANIM = None
                         # Mensaje de error genérico
-                        game_play_event(texto=GAME_MSGS["DOES_NOT_WORK"], speaker=player)
+                        game_play_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
 
                     inventory.active_item = None
                     verb_menu.clear_selection()
@@ -1758,7 +1692,7 @@ def draw_explore_mode(screen):
         # Función auxiliar para traducir ID -> Texto (Ej: "LOOK AT" -> "MIRAR")
         def get_verb_label(verb_id):
             if not verb_id: return ""
-            return VERBS_LOCALIZED.get(verb_id, verb_id)
+            return cfg.tm.get("verbs", verb_id)
 
         # A) ¿HAY UN OBJETO DEL INVENTARIO ACTIVO (PEGADO AL MOUSE)?
         if inventory.active_item:
@@ -1779,7 +1713,7 @@ def draw_explore_mode(screen):
             elif hovered_exit:
                 # Si tienes una traducción para "Salida" en GAME_MSGS, úsala, si no, usa el nombre de la escena
                 scene_id = hovered_exit.target_scene
-                target_name = SCENE_NAMES.get(scene_id, scene_id)
+                target_name = get_scene_name(scene_id)
 
             # 4. Determinar la preposición correcta
             # Buscamos en GAME_MSGS. Si no existe, usamos valores por defecto seguros.
@@ -1788,9 +1722,9 @@ def draw_explore_mode(screen):
             # Si tenemos un objetivo válido, añadimos la preposición gramatical
             if target_name != "...":
                 if logic_verb_id == "GIVE":
-                    preposition = GAME_MSGS.get('SENTENCE_TO', ' a ')  # Ej: Dar X " a " Y
+                    preposition = cfg.tm.get("msgs", 'SENTENCE_TO', ' a ')  # Ej: Dar X " a " Y
                 else:
-                    preposition = GAME_MSGS.get('SENTENCE_WITH', ' con ')  # Ej: Usar X " con " Y
+                    preposition = cfg.tm.get("msgs", 'SENTENCE_WITH', ' con ')  # Ej: Usar X " con " Y
 
             # 5. Construir la frase final
             # Estructura: VERBO + ITEM_ORIGEN + PREP + ITEM_DESTINO
@@ -1809,7 +1743,7 @@ def draw_explore_mode(screen):
 
             elif hovered_exit:
                 scene_id = hovered_exit.target_scene
-                target_name = SCENE_NAMES.get(scene_id, scene_id)
+                target_name = get_scene_name(scene_id)
                 if not logic_verb_id: logic_verb_id = "WALK"
 
             elif h_item:
@@ -1821,7 +1755,7 @@ def draw_explore_mode(screen):
             if logic_verb_id:
                 # Caso especial para WALK (Ir a)
                 if logic_verb_id == "WALK":
-                    display_verb = GAME_MSGS.get("VERB_WALK", "Ir a")
+                    display_verb = cfg.tm.get("msgs", "VERB_WALK", "Go to")
                     # Lógica de preposición para "Ir a" (opcional según tu YAML)
                     # Si tu YAML "VERB_WALK" es solo "Ir", descomenta la siguiente línea:
                     # if target_name: display_verb += " a"
@@ -1894,18 +1828,14 @@ def draw_hints_overlay(screen, scene, camera_x):
 
     # A) HOTSPOTS (Amarillo)
     for hs in scene.hotspots.hotspots:
-        key_or_text = getattr(hs, "hint_message", None)
-        texto_final = hs.label
-        if key_or_text:
-            if key_or_text in OBJ_DESCS:
-                texto_final = OBJ_DESCS[key_or_text]
-            else:
-                texto_final = key_or_text
-        elements.append((hs.rect, texto_final, (255, 255, 0)))
+        hint_msg = getattr(hs, "hint_message", None)
+        if not hint_msg:
+            hint_msg=hs.label
+        elements.append((hs.rect, hint_msg, (255, 255, 0)))
 
         # B) SALIDAS (Rojo)
     for ex in scene.exits:
-        nombre_escena = SCENE_NAMES.get(ex.target_scene, ex.target_scene)
+        nombre_escena = get_scene_name(ex.target_scene)
         texto = f"Ir a: {nombre_escena}"
         elements.append((ex.rect, texto, (255, 100, 100)))
 
@@ -2006,10 +1936,10 @@ def logic_save_game(filename):
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         save_load_ui.scan_saves()  # Refrescar lista visual
-        game_play_event(texto=GAME_MSGS["SAVE_SUCCESS"], text_time=2.0)
+        game_play_event(texto=cfg.tm.get("msgs", "SAVE_SUCCESS"), text_time=2.0)
     except Exception as e:
         print(f"Error Saving: {e}")
-        game_play_event(texto=GAME_MSGS["SAVE_ERROR"], text_time=2.0)
+        game_play_event(texto=cfg.tm.get("msgs", "SAVE_ERROR"), text_time=2.0)
 
 
 def logic_load_game(filename):
@@ -2032,10 +1962,11 @@ def logic_load_game(filename):
         target_scene_id = saved_scene_raw
         if target_scene_id not in scene_manager.scenes:
             # Intento de recuperación si se guardó el nombre traducido por error
-            for key_id, val_name in SCENE_NAMES.items():
+            """for key_id, val_name in SCENE_NAMES.items():
                 if val_name == saved_scene_raw:
                     target_scene_id = key_id
-                    break
+                    break"""
+            raise NameError(f"Scene {target_scene_id} was not found when loading gamestate")
 
         scene_manager.change_scene(target_scene_id or "AVDA_PAZ")
 
@@ -2060,11 +1991,11 @@ def logic_load_game(filename):
 
         # 6. Éxito -> Forzar estado EXPLORE
         set_state(GameState.EXPLORE)
-        game_play_event(texto=GAME_MSGS["LOAD_SUCCESS"], text_time=2.0)
+        game_play_event(texto=cfg.tm.get("msgs", "LOAD_SUCCESS"), text_time=2.0)
 
     except Exception as e:
         print(f"Error Load: {e}")
-        game_play_event(texto=GAME_MSGS.get("LOAD_CORRUPT", "Error"), text_time=2.0)
+        game_play_event(texto=cfg.tm.get("msgs", "LOAD_CORRUPT", "Error"), text_time=2.0)
 
 
 def logic_close_menu():
@@ -2514,5 +2445,34 @@ def mainloop():
     pygame.quit()
     sys.exit()
 
-def load_scripts():
-    pass
+def load_scripts(directory):
+    """Load the PCScripts in <directory> and inject them in the game"""
+    print("Loading game scripts...")
+    pcs=parse_directory(directory)
+
+    ## Ugly definition of the dependencies for the load_scripts function
+    dependencies = {
+        "scene_manager": scene_manager,
+        "player": player,
+        "inventory": inventory,
+        "game_play_event": game_play_event,
+        "play_scene_music": play_scene_music,
+        "stop_scene_music": stop_scene_music,
+        "cutscene_manager": cutscene_manager,
+        "dialogue_system": dialogue_system,
+        "map_system": map_system,
+        "ending_manager": ending_manager,
+        "GAME_STATE": GAME_STATE,
+        "PLAYER_CONFIG": cfg.PLAYER_CONFIG,
+
+        # Funciones lógicas
+        "smart_move_to": smart_move_to,
+        "execute_hotspot_action": execute_hotspot_action,
+        "change_player_active": change_player_active,
+        "crafting": crafting,
+        "play_object_animation": play_object_animation,
+        "change_state_object": change_state_object,
+        "load_and_open_map": load_and_open_map,
+    }
+
+    loader.load_scripts(pcs, dependencies)

@@ -266,7 +266,6 @@ class SceneManager:
     def get_current_scene(self):
         return self.current_scene
 
-    # --- NUEVO MÉTODO: REGISTRAR JUGADOR ---
     def set_player(self, player_instance):
         self.player = player_instance
 
@@ -415,3 +414,71 @@ class SceneManager:
         self.next_spawn_point = None
         self._perform_switch()
         return self.current_scene
+
+
+class TranslationManager:
+    """New class to handle the translations and language changes"""
+    def __init__(self, default_language="en"):
+        self.language=default_language
+        self.variables={}
+        self.variables["items"] = {}
+        self.variables["descs"] = {}
+        self.variables["scenes"] = {}
+        self.variables["msgs"] = {}
+        self.variables["verbs"] = {}
+        self.variables["title"] = {}
+        self.variables["cine"] = {}
+        self.variables["dialogue"] = {}
+        self.variables["menu"] = {}
+        self.verb_keys=[]
+
+    def load_translation(self, data):
+        self.variables["items"].clear()
+        self.variables["items"].update(data["items"])
+        self.variables["descs"].clear()
+        self.variables["descs"].update(data["descriptions"])
+        self.variables["scenes"].clear()
+        self.variables["scenes"].update(data["scenes"])
+        self.variables["msgs"].clear()
+        self.variables["msgs"].update(data["system_messages"])
+        self.variables["verbs"].clear()
+        self.variables["verbs"].update(data["verbs"])
+        self.variables["menu"].clear()
+        self.variables["menu"].update(data["menus"])
+        self.variables["title"].clear()
+        self.variables["title"].update(data["titles"])
+        self.variables["cine"].clear()
+        self.variables["cine"].update(data["cinematics"])
+        self.variables["dialogue"].clear()
+        self.variables["dialogue"].update(data.get("dialogues", {}))
+
+        self.variables["msgs"]["VERB_USE"] = self.variables["verbs"].get("USE", "USE")
+        self.verb_keys = list(self.variables["verbs"].keys())
+
+    def get(self, namespace, var, fallback=None):
+        if namespace not in self.variables:
+            raise NameError(f"Namespace {namespace} doesn't exist")
+        if var in self.variables[namespace]:
+            return self.variables[namespace][var]
+        if fallback: return fallback
+        return var
+
+
+class String:
+    """New class representing a string displayed on screen. It is an abstraction layer for the translation model;
+    you use it like a string, but it changes with the current language behind the hood"""
+    def __init__(self, value, namespace, manager):
+        self.manager=manager
+        if isinstance(value, str): #Value is a simple string
+            self.isDynamic=False
+            self.staticString=value
+        else:
+            self.isDynamic=True
+            self.dynamicVar=value.value
+            self.dynamicNamespace=namespace
+
+    def __repr__(self):
+        if not self.isDynamic:
+            return self.staticString
+        else:
+            return self.manager.get(self.dynamicNamespace, self.dynamicVar)
