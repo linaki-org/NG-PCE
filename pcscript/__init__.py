@@ -7,6 +7,7 @@ from os.path import join
 
 def parse_string(string_to_parse):
     tree = PCS_parser.parse(string_to_parse)
+    print(tree.pretty())
     transformer=PCTransformer()
     result = transformer.transform(tree)
     return result

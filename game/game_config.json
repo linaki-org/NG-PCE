@@ -20,7 +20,7 @@
 
     "NARRATION_STYLE": "LUCAS",
 
-    "ENABLE_SOUND": false,
+    "ENABLE_SOUND": true,
     "DEBUG_MODE": false,
     "SHOW_HINTS_ONLY": false,
     "SHOW_WALKABLE_MASK": false,

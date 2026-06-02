@@ -482,3 +482,20 @@ class String:
             return self.staticString
         else:
             return self.manager.get(self.dynamicNamespace, self.dynamicVar)
+
+    def __hash__(self):
+        return self.__repr__().__hash__()
+
+    def __len__(self):
+        return len(self.__repr__())
+
+    def __getitem__(self, item):
+        return self.__repr__().__getitem__(item)
+
+    def split(self, arg):
+        string=self.__repr__()
+        return string.split(arg)
+
+    def upper(self):
+        string=self.__repr__()
+        return string.upper()

@@ -8,7 +8,7 @@ peace_avenue is scene:
     y_max: 400
     transition: fade
     @enter:
-        text
+        say SCENE1_INTRO_MSG
 
 bell is hotspot of peace_avenue:
     label: BELL
@@ -20,14 +20,15 @@ bell is hotspot of peace_avenue:
     hint: BELL_HINT
     scale: 0.1
     verb: LOOKAT
-    @lookat:
-        say BELL_LOOK
-    @open:
-        say BELL_OPEN
-    @push:
-        say BELL_PUSH
-    @pull:
-        say BELL_PULL
+    @lookat: say BELL_LOOK
+    @open: say BELL_OPEN
+    @push: say BELL_PUSH
+    @pull: say BELL_PULL
+    @use:
+        say BELL_MAGIC_USE
+        sound "church-bell.ogg"
+        flag puzzle_campana_resuelto
+        delitem hammer
 
 hammer is hotspot of peace_avenue:
     label: "marteau"
@@ -35,13 +36,11 @@ hammer is hotspot of peace_avenue:
     y: 315
     img: "martillo.png"
     scale: 0.08
-    flag: "martillo_recogido"
+    flag: martillo_recogido
     description: HAMMER_LOOK
     verb: LOOKAT
-    @lookat:
-        say HAMMER_LOOK
-    @pickup:
-        say HAMMER_PICK
+    @lookat: say HAMMER_LOOK
+    @pickup: say HAMMER_PICK
 
 pa_ex1 is exit of peace_avenue:
     x: 750

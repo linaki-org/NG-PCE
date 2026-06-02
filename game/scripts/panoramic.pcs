@@ -1,0 +1,95 @@
+panoramic is scene:
+    bg_img: "panoramica.jpg"
+    name: PANORAMIC
+    walk_img: "panoramica_bm.jpg"
+    scale_min: 1.9
+    scale_max: 2.1
+    y_min: 325
+    y_max: 400
+
+    @enter:
+        say SCENE3_INTRO_MSG
+
+trashcan is hotspot of panoramic:
+    img: "trashcan.png"
+    frames: 2
+    speed: 0
+    x: 800
+    y: 355
+    label: TRASHCAN
+    verb: LOOKAT
+    scale: 0.15
+    solid: true
+    walk_x: 875
+    walk_y: 365
+    facing: LEFT
+    @lookat: say TRASH_LOOK
+    @open:
+        trashcan.state: 1
+        say TRASH_OPEN
+        anim open
+    @close:
+        trashcan.state: 0
+        say TRASH_CLOSE
+        anim close
+
+garba is hotspot of panoramic:
+    img: "garba_tr.gif"
+    frames: 6
+    speed: 300
+    x: 1250
+    y: 360
+    scale: 0.65
+    label: NPC_GARBA
+    walk_x: 1365
+    walk_y: 360
+    facing: LEFT
+
+    @talkto: start_dialogue garba_dialogue
+    @lookat: say NPC_GARBA_LOOK
+    @give flashlight_with_bat on garba:
+        say GARBA_GIVE_FLASHLIGHT
+        delitem flashlight_with_bat
+        sound medal
+
+craft_flashlight is script:
+    delitem flashlight_empty
+    delitem batteries
+    pickup flashlight_with_bat
+    flag linterna_con_pilas_recogida
+
+flashlight_empty is hotspot of panoramic:
+    img: "linterna_sin_pilas.png"
+    x: 950
+    y: 370
+    scale: 0.085
+    label: FLASHLIGHT_EMPTY
+    flag: linterna_sin_pilas_recogida
+    verb: PICKUP
+    @lookat: say FLASHLIGHT_EMPTY_LOOK
+    @pickup: say FLASHLIGHT_EMPTY_PICK
+    @use batteries on flashlight_empty:
+        run craft_flashlight
+
+batteries is hotspot of panoramic:
+    img: "pilas_linterna.png"
+    x: 1050
+    y: 370
+    scale: 0.08
+    label: BATTERIES
+    flag: pilas_linterna_recogidas
+    verb: PICKUP
+    @lookat: say BATTERIES_LOOK
+    @pickup: say BATTERIES_PICK
+    @use flashlight_empty on batteries:
+        run craft_flashlight
+
+flashlight_with_bat is hotspot of panoramic:
+    img: "linterna_con_pilas.png"
+    x: 1000
+    y: 3000
+    label: FLASHLIGHT_FULL
+    verb: USE
+    @lookat: say FLASHLIGHT_FULL_LOOK
+    @use: say FLASHLIGHT_FULL_USE
+    @open: say FLASHLIGHT_FULL_OPEN

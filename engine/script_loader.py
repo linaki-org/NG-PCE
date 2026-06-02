@@ -3,15 +3,21 @@
 from classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM, \
     String
 from config import GLOBAL_STATE, GAME_AREA_HEIGHT
-from pcscript.dataclasses import Scene as dc_Scene, Hotspot as dc_Hotspot, Exit as dc_Exit, DynamicValue as dc_dynamic
+from pcscript.dataclasses import (Scene as dc_Scene,
+                                  Hotspot as dc_Hotspot,
+                                  Exit as dc_Exit,
+                                  DynamicValue as dc_dynamic,
+                                  ObjAction as dc_Action)
 import config as cfg
+import engine.script_runner as runner
 #Transitions ID definitions
 TRANSITIONS = {"fade" : TRANSITION_FADE,
                "slide_left" : TRANSITION_SLIDE_LEFT,
                "slide_up" : TRANSITION_SLIDE_UP,
                "zoom" : TRANSITION_ZOOM}
 
-GLOBAL_VARS=["GAME_AREA_HEIGHT", "LOOKAT", "WALK", "OPEN", "PUSH", "CLOSE", "PULL", "PICKUP", "USE", "TALKTO", "GIVE"]
+GLOBAL_VARS=["GAME_AREA_HEIGHT", "LOOKAT", "WALK", "OPEN", "PUSH", "CLOSE", "PULL", "PICKUP", "USE", "TALKTO", "GIVE", "BACK", "true", "false",
+             "LEFT", "RIGHT"]
 LOOKAT="LOOK AT"
 WALK="WALK"
 OPEN="OPEN"
@@ -22,6 +28,32 @@ PICKUP="PICK UP"
 USE="USE"
 TALKTO="TALK TO"
 GIVE="GIVE"
+BACK="back"
+true=True
+false=False
+LEFT="left"
+RIGHT="right"
+
+TRIGGER_VERBS={"lookat": LOOKAT,
+               "walk": WALK,
+               "open": OPEN,
+               "push": PUSH,
+               "close" : CLOSE,
+               "pull": PULL,
+               "pickup" : PICKUP,
+               "use" : USE,
+               "talkto" : TALKTO,
+               "give" : GIVE}
+
+GP_ACTIONS={"say" : "texto",
+            "sound" : "play_sound",
+            "flag" : "flag",
+            "delitem" : "delete_item",
+            "anim" : "anim",
+            "duration" : "text_time",
+            "speaker" : "speaker"}
+
+ALL_ACTIONS=["say", "sound", "flag", "delitem", "anim", "duration", "speaker", "animate", "start_dialogue", "run"]
 
 def getprop(property):
     """Utility to automatically turn variable expressions (E.g scenes or translations) into their value"""
@@ -34,36 +66,20 @@ def getprop(property):
     raise NameError(f"Cannot find anything matching the expression {property.value}")
 
 
-def objprop(property):
+
+def dynalink(property):
+    """Make sure the property is a dynamic value and return the reference to the object"""
     if not isinstance(property, dc_dynamic):
-        return property
+        raise TypeError(f"Argument {property} cannot be a string; a dynamic reference value is required")
     return property.value
 
 def load_scripts(scripts, deps):
     """Load provided scripts into the game"""
+    global game_play_event
 
     #Unpack provided ugly dependencies
     scene_manager = deps["scene_manager"]
-    player = deps["player"]
-    inventory = deps["inventory"]
     game_play_event = deps["game_play_event"]
-    play_scene_music = deps["play_scene_music"]
-    stop_scene_music = deps["stop_scene_music"]
-    cutscene_manager = deps["cutscene_manager"]
-    dialogue_system = deps["dialogue_system"]
-    map_system = deps["map_system"]
-    ending_manager = deps["ending_manager"]
-    GAME_STATE = deps["GAME_STATE"]
-    PLAYER_CONFIG = deps["PLAYER_CONFIG"]
-
-    # Logic funcs
-    smart_move_to = deps["smart_move_to"]
-    execute_hotspot_action = deps["execute_hotspot_action"]
-    change_player_active = deps["change_player_active"]
-    crafting = deps["crafting"]
-    play_object_animation = deps["play_object_animation"]
-    change_state_object = deps["change_state_object"]
-    load_and_open_map = deps["load_and_open_map"]
 
     #First, load only scenes
     for object in scripts:
@@ -88,6 +104,50 @@ def check_properties(props, required_props, all_props, object_name):
         if prop not in props:
             raise TypeError(f"Missing required property {prop} for {object_name}")
 
+def generate_action_lambda(actions):
+    if len(actions)==1 and actions[0].action=="say":  # Action is a simple say command
+        return String(actions[0].arg, "descs", cfg.tm)
+
+    #Generate list of functions to call and args for game_play_events
+    funcs_to_call=[]
+    game_play_args={}
+    for action in actions:
+        print("Action :", action)
+        if isinstance(action, dc_Action):
+            if action.action not in ALL_ACTIONS:
+                raise NameError(f"Action {action.action} was not found")
+            if action.action in GP_ACTIONS:
+                action_key=GP_ACTIONS.get(action.action)
+                action_value=action.arg
+                if action.action in ["say"]:
+                    action_value=String(action.arg, "descs", cfg.tm)
+                elif action.action in ["flag", "del", "anim", "speaker"]:
+                    action_value=dynalink(action.arg)
+                game_play_args[action_key]=action_value
+
+    return lambda: game_play_event(**game_play_args)
+
+def translate_event_trigger(trigger):
+    """Turn a Trigger object into a trigger string"""
+    if trigger.verb not in TRIGGER_VERBS:
+        raise NameError(f"Trigger {trigger.verb} doesn't exist")
+    verb=TRIGGER_VERBS.get(trigger.verb)
+    if not trigger.target1: #Event is a simple verb
+         return verb
+    else: #Event has a target
+        trigger_key=f"{verb}_{trigger.target1.upper()}_ON_{trigger.target2.upper()}"
+        return trigger_key
+
+
+def generate_actions(actions_defs):
+    actions={}
+    for event in actions_defs:
+        trigger=translate_event_trigger(event.trigger)
+        action=generate_action_lambda(event.body)
+        actions[trigger]=action
+
+    return actions
+
 def load_scene(scene, scene_manager):
     props=scene.properties
     required_properties=["name", "bg_img"]
@@ -108,9 +168,10 @@ def load_scene(scene, scene_manager):
         args["y_range"] = (props["y_min"], props["y_max"])
     if "transition" in props:
         transition_id = props["transition"]
-        if not isinstance(transition_id, dc_dynamic) or transition_id.value not in TRANSITIONS:
+        if not dynalink(transition_id) or transition_id.value not in TRANSITIONS:
             raise NameError(f"Unknown transition {transition_id} for scene {scene.name}. Transition ID needs to be one of {', '.join(TRANSITIONS.keys())}")
         args["transition_type"]=TRANSITIONS[transition_id.value]
+
 
     scene=Scene(**args) #Create the scene with generated args
     scene_manager.add_scene(scene)
@@ -119,8 +180,8 @@ def load_scene(scene, scene_manager):
 def load_hotspot(hotspot, scene_manager):
     props = hotspot.properties
     required_properties = ["x", "y"]
-    all_properties = ["x", "y", "width", "height", "img", "scale", "label",
-                      "label", "description", "verb", "walk_x", "walk_y", "hint", "solid", "flag"]
+    all_properties = ["x", "y", "width", "height", "img", "scale", "label", "frames", "speed",
+                      "label", "description", "verb", "walk_x", "walk_y", "hint", "solid", "flag", "facing"]
     check_properties(props, required_properties, all_properties, hotspot.name)
 
     # Generate args dict for hotspot definition
@@ -134,7 +195,7 @@ def load_hotspot(hotspot, scene_manager):
     if "label" in props:
         args["label_id"] = String(props["label"], "items", cfg.tm)
     if "hint" in props:
-        args["hint_message"] = String(props["hint"], "hints", cfg.tm)
+        args["hint_message"] = String(props["hint"], "descs", cfg.tm)
     if "scale" in props:
         args["scale"] = props["scale"]
     if "walk_x" in props and "walk_y" in props:
@@ -143,16 +204,29 @@ def load_hotspot(hotspot, scene_manager):
         args["description"] = String(props["description"], "descs", cfg.tm)
     if "verb" in props:
         args["primary_verb"] = getprop(props["verb"])
+    if "flag" in props:
+        args["flag"] = dynalink(props["flag"])
+    if "frames" in props:
+        args["num_frames"] = props["frames"]
+    if "speed" in props:
+        args["anim_speed"] = props["speed"]
+    if "solid" in props:
+        args["solid"] = getprop(props["solid"])
+    if "facing" in props:
+        args["facing"] = getprop(props["facing"])
 
     if hotspot.scene not in scene_manager.scenes:
         raise NameError(f"Scene {hotspot.scene} doesn't exist for hotspot {hotspot.name}")
+
+    #Generate action calls for this HS
+    actions=generate_actions(hotspot.events)
+    args["actions"]=actions
 
     scene = scene_manager.scenes.get(hotspot.scene)  # Retrieve the scene where the hotspot lives
     scene.add_hotspot_data(**args) #Create the hotspot data in the scene
 
 def load_exit(exit, scene_manager):
     props = exit.properties
-    print(props)
     required_properties = ["x", "y", "w", "h", "target", "spawn_x", "spawn_y"]
     all_properties = required_properties
     check_properties(props, required_properties, all_properties, exit.name)
@@ -163,7 +237,7 @@ def load_exit(exit, scene_manager):
     args["y"]=props["y"]
     args["w"]=getprop(props["w"])
     args["h"]=getprop(props["h"])
-    args["target_scene"]=objprop(props["target"])
+    args["target_scene"]=dynalink(props["target"])
     args["spawn_x"]=props["spawn_x"]
     args["spawn_y"]=props["spawn_y"]
 

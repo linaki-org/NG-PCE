@@ -618,7 +618,7 @@ class HotspotManager:
 
 
 class MapSystem:
-    def __init__(self, bg_file):
+    def __init__(self, bg_file, scene_manager):
         self.active = False
         self.nodes = []
         self.current_location_node = None
@@ -634,10 +634,11 @@ class MapSystem:
         
         self.traveling = False
         self.anim_progress = 0.0 
-        self.anim_speed = 1.5 
+        self.anim_speed = 1.5
+        self.scene_manager=scene_manager
     
     def add_node(self, scene_id, map_x, map_y, spawn_x, spawn_y, icon_file=None):
-        self.nodes.append(MapNode(scene_id, map_x, map_y, spawn_x, spawn_y, icon_file))
+        self.nodes.append(MapNode(scene_id, map_x, map_y, spawn_x, spawn_y, icon_file, self.scene_manager))
 
     def refresh_map_labels(self):
         """Recarga los textos de los nodos basado en el idioma actual"""

@@ -54,12 +54,11 @@ class PCTransformer(Transformer):
         return PropAssign(name=str(items[0]), value=items[1])
 
     def state_assign(self, items):
-        if len(items) == 2:
-            # bare: prop = value (implicit self)
-            return StateAssign(obj=None, prop=str(items[0]), value=items[1])
-        else:
-            # obj.prop = value
-            return StateAssign(obj=str(items[0]), prop=str(items[1]), value=items[2])
+        return StateAssign(obj=str(items[0]), prop=str(items[1]), value=items[2])
+
+    def action(self, items):
+        arg = items[1] if len(items) > 1 else None
+        return ObjAction(action=str(items[0]), arg=arg)
 
     def obj_action(self, items):
         if len(items) == 1:
@@ -78,13 +77,13 @@ class PCTransformer(Transformer):
 
     # Event head variants
     def interaction(self, items):
-        return EventName(actor="default", verb=str(items[0]), target=str(items[1]))
+        return EventName(actor="default", verb=str(items[0]), target1=str(items[1]), target2=str(items[2]))
 
     def verb_only(self, items):
         return EventName(actor=str(items[0]), verb=str(items[1]))
 
     def simple(self, items):
-        return EventName(actor=str(items[0]))
+        return EventName(actor=None, verb=str(items[0]))
 
     def event_trigger(self, items):
         return Event(trigger=items[0], body=items[1])

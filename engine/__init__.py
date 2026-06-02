@@ -735,7 +735,7 @@ ending_manager = EndingManager(
     get_texts_callback=lambda: cfg.tm.variables["cine"]
 )
 # Inicializamos el sistema de mapas
-map_system = MapSystem("mapa1.jpg")
+map_system = MapSystem("mapa1.jpg", scene_manager)
 
 # Estados del juego
 # CURRENT_STATE = GameState.EXPLORE       #para arrancar en el juego
@@ -1254,36 +1254,36 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
     global CURRENT_STATE, save_load_ui, language_ui, system_menu
 
     # --- MENU FILE ---
-    if menu_title == cfg.MENU_TEXTS.get("FILE_TITLE", "FILE"):
-        if item_label == cfg.MENU_TEXTS.get("SAVE_CMD", "SAVE"):
+    if menu_title == cfg.tm.get("menu", "FILE_TITLE", "FILE"):
+        if item_label == cfg.tm.get("menu", "SAVE_CMD", "SAVE"):
             # Usamos el método open_menu que ya prepara todo
             save_load_ui.open_menu("SAVE", lambda: CURRENT_STATE)
             set_state(GameState.SAVELOAD)  # <--- CORREGIDO: Era change_state
             system_menu.close_all()
 
-        elif item_label == cfg.MENU_TEXTS.get("LOAD_CMD", "LOAD"):
+        elif item_label == cfg.tm.get("menu", "LOAD_CMD", "LOAD"):
             save_load_ui.open_menu("LOAD", lambda: CURRENT_STATE)
             set_state(GameState.SAVELOAD)  # <--- CORREGIDO: Era change_state
             system_menu.close_all()
 
     # --- MENU HELP ---
-    elif menu_title == cfg.MENU_TEXTS.get("HELP_TITLE", "HELP"):
-        if item_label == cfg.MENU_TEXTS.get("DEBUG_OPT", "DEBUG"):
+    elif menu_title == cfg.tm.get("menu", "HELP_TITLE", "HELP"):
+        if item_label == cfg.tm.get("menu", "DEBUG_OPT", "DEBUG"):
             cfg.CONFIG["DEBUG_MODE"] = not cfg.CONFIG.get("DEBUG_MODE", False)
-        elif item_label == cfg.MENU_TEXTS.get("GAME_HELP_OPT", "HINTS"):
+        elif item_label == cfg.tm.get("menu", "GAME_HELP_OPT", "HINTS"):
             cfg.CONFIG["SHOW_HINTS_ONLY"] = not cfg.CONFIG.get("SHOW_HINTS_ONLY", False)
-        elif item_label == cfg.MENU_TEXTS.get("NO_OPT", "OFF"):
+        elif item_label == cfg.tm.get("menu", "NO_OPT", "OFF"):
             cfg.CONFIG["DEBUG_MODE"] = False
             cfg.CONFIG["SHOW_HINTS_ONLY"] = False
 
     # --- MENU TEXT ---
-    elif menu_title == cfg.MENU_TEXTS.get("TEXT_TITLE", "TEXT"):
+    elif menu_title == cfg.tm.get("menu", "TEXT_TITLE", "TEXT"):
         # 1. CAMBIO DE VELOCIDAD
-        if context_label == cfg.MENU_TEXTS.get("VEL_LABEL", "SPEED"):
+        if context_label == cfg.tm.get("menu", "VEL_LABEL", "SPEED"):
             vel_map = {
-                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[0]: "SPEED_SLOW",
-                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[1]: "SPEED_MEDIUM",
-                cfg.MENU_TEXTS.get("VEL_OPTS", ["SLOW", "MED", "FAST"])[2]: "SPEED_FAST"
+                cfg.tm.get("menu", "VEL_OPTS", ["SLOW", "MED", "FAST"])[0]: "SPEED_SLOW",
+                cfg.tm.get("menu", "VEL_OPTS", ["SLOW", "MED", "FAST"])[1]: "SPEED_MEDIUM",
+                cfg.tm.get("menu", "VEL_OPTS", ["SLOW", "MED", "FAST"])[2]: "SPEED_FAST"
             }
             cfg.TEXT_CONFIG["CURRENT_SPEED"] = vel_map.get(item_label, "SPEED_MEDIUM")
 
@@ -1292,11 +1292,11 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
         # 2. CAMBIO DE TAMAÑO (LO QUE PEDISTE)
-        elif context_label == cfg.MENU_TEXTS.get("SIZE_LABEL", "SIZE"):
+        elif context_label == cfg.tm.get("menu", "SIZE_LABEL", "SIZE"):
             size_map = {
-                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[0]: "SIZE_SMALL",
-                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[1]: "SIZE_MEDIUM",
-                cfg.MENU_TEXTS.get("SIZE_OPTS", ["SMALL", "MED", "LARGE"])[2]: "SIZE_LARGE"
+                cfg.tm.get("menu", "SIZE_OPTS", ["SMALL", "MED", "LARGE"])[0]: "SIZE_SMALL",
+                cfg.tm.get("menu", "SIZE_OPTS", ["SMALL", "MED", "LARGE"])[1]: "SIZE_MEDIUM",
+                cfg.tm.get("menu", "SIZE_OPTS", ["SMALL", "MED", "LARGE"])[2]: "SIZE_LARGE"
             }
             cfg.TEXT_CONFIG["CURRENT_SIZE"] = size_map.get(item_label, "SIZE_MEDIUM")
 
@@ -1306,16 +1306,16 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
     # --- MENU SOUND ---
-    elif menu_title == cfg.MENU_TEXTS.get("SOUND_TITLE", "SOUND"):
-        if item_label == cfg.MENU_TEXTS.get("YES_OPT", "ON"):
+    elif menu_title == cfg.tm.get("menu", "SOUND_TITLE", "SOUND"):
+        if item_label == cfg.tm.get("menu", "YES_OPT", "ON"):
             pygame.mixer.music.unpause()
             # Aquí podrías activar efectos de sonido también
         else:
             pygame.mixer.music.pause()
 
     # --- MENU CURSOR ---
-    elif menu_title == cfg.MENU_TEXTS.get("CURSOR_TITLE", "CURSOR"):
-        if item_label == cfg.MENU_TEXTS.get("CURSOR_CLASSIC", "CLASSIC"):
+    elif menu_title == cfg.tm.get("menu", "CURSOR_TITLE", "CURSOR"):
+        if item_label == cfg.tm.get("menu", "CURSOR_CLASSIC", "CLASSIC"):
             cfg.CONFIG["CURSOR_STYLE"] = "CLASSIC"
         else:
             cfg.CONFIG["CURSOR_STYLE"] = "MODERN"
@@ -1711,7 +1711,6 @@ def draw_explore_mode(screen):
             elif h_item and h_item != inventory.active_item:
                 target_name = h_item.name
             elif hovered_exit:
-                # Si tienes una traducción para "Salida" en GAME_MSGS, úsala, si no, usa el nombre de la escena
                 scene_id = hovered_exit.target_scene
                 target_name = get_scene_name(scene_id)
 
@@ -1845,6 +1844,7 @@ def draw_hints_overlay(screen, scene, camera_x):
     for rect, text, color in elements:
         screen_x = rect.x - int(camera_x)
         screen_y = rect.y
+        text=str(text)
         draw_rect = pygame.Rect(screen_x, screen_y, rect.width, rect.height)
 
         # Solo dibujamos si está en pantalla

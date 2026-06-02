@@ -19,12 +19,58 @@ window is hotspot of town_hall:
     walk_x: 110
     walk_y: 380
     verb: LOOKAT
-    @lookat:
-        say WINDOW_LOOK
-    @open:
-        say WINDOW_OPEN
-    @use with stone:
-        say WINDOW_STONE
+    @lookat: say WINDOW_LOOK
+    @open: say WINDOW_OPEN
+    @use stone on window: say WINDOW_STONE
+
+lantern is hotspot of town_hall:
+    label: LANTERN_OLD
+    img: "farol.png"
+    x: 600
+    y: 420
+    scale: 0.1
+    flag: farol_recogido
+    verb: PICKUP
+    @lookat: say LANTERN_LOOK
+    @pickup: say LANTERN_PICK
+
+strange_machine is hotspot of town_hall:
+    label: MACHINE_STRANGE
+    img: "animation_demo.png"
+    x: 280
+    y: 420
+    scale: 0.65
+    frames: 5
+    speed: 200
+    verb: USE
+    solid: true
+    @lookat: say MACHINE_LOOK
+    @use:
+        say MACHINE_USE
+        animate strange_machine
+    @push:
+        say MACHINE_PUSH
+        animate strange_machine
+
+ambient_machine is ambient of town_hall:
+    img: "animation_demo.png"
+    x: 520
+    y: 420
+    frames: 5
+    speed: 100
+    scale: 0.4
+    layer: BACK
+
+ambient_fire is ambient of town_hall:
+    img: "hoguera.gif"
+    x: 675
+    y: 420
+    label: BONFIRE
+    frames: 50
+    speed: 50
+    scale: 1
+    layer: BACK
+    @lookat: say BONFIRE_LOOK
 
 th_ex1 is exit of town_hall:
     x: 0

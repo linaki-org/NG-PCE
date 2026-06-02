@@ -444,8 +444,8 @@ class SaveLoadUI:
     def scan_saves(self):
         self.slots_data = []
         # Leemos los textos AQUÍ para que estén actualizados al idioma actual
-        empty_txt = cfg.GAME_MSGS.get("SLOT_EMPTY", "Empty Slot")
-        corrupt_txt = cfg.GAME_MSGS.get("SLOT_CORRUPT", "Corrupt File")
+        empty_txt = cfg.tm.get("msgs", "SLOT_EMPTY", "Empty Slot")
+        corrupt_txt = cfg.tm.get("msgs", "SLOT_CORRUPT", "Corrupt File")
 
         for i in range(self.total_slots):
             filename = os.path.join(cfg.SAVE_DIR, f"savegame_{i}.json")
@@ -540,7 +540,7 @@ class SaveLoadUI:
     def draw_text_hd(self):
         if not self.active: return
         title_key = "SAVE_CMD" if self.mode == "SAVE" else "LOAD_CMD"
-        title = cfg.MENU_TEXTS.get(title_key, self.mode)  # Uso de .get para evitar crash
+        title = cfg.tm.get("menu", title_key, self.mode)  # Uso de .get para evitar crash
 
         draw_text_sharp(title, self.rect.centerx, self.rect.y + 25, 28, (255, 255, 255), align="center", shadow=True)
         current_y = self.list_area_rect.y
@@ -550,7 +550,7 @@ class SaveLoadUI:
                             align="midleft")
             current_y += (self.slot_height + self.slot_spacing)
 
-        close_txt = cfg.MENU_TEXTS.get("CLOSE_CMD", "Close")
+        close_txt = cfg.tm.get("menu", "CLOSE_CMD", "Close")
         draw_text_sharp(close_txt, self.close_btn_rect.centerx, self.close_btn_rect.centery, 18, (255, 255, 255),
                         align="center")
 
@@ -810,7 +810,7 @@ class LanguageUI:
         c_color = (200, 50, 50) if self.close_btn_rect.collidepoint(mx, my) else (150, 50, 50)
         pygame.draw.rect(screen, c_color, self.close_btn_rect)
         pygame.draw.rect(screen, (255, 255, 255), self.close_btn_rect, 1)
-        close_surf = self.font.render(cfg.MENU_TEXTS.get("CLOSE_CMD", "CLOSE"), True, (255, 255, 255))
+        close_surf = self.font.render(cfg.tm.get("menu", "CLOSE_CMD", "CLOSE"), True, (255, 255, 255))
         screen.blit(close_surf, (self.close_btn_rect.centerx - close_surf.get_width() // 2,
                                  self.close_btn_rect.centery - close_surf.get_height() // 2))
 
@@ -1271,9 +1271,12 @@ class VerbMenu:
         for btn in self.buttons:
             if btn.rect.collidepoint(mx, my):
                 if self.selected_verb == btn.verb_id:
-                    self.selected_verb = None; btn.selected = False
+                    self.selected_verb = None
+                    btn.selected = False
                 else:
-                    self.clear_selection(); self.selected_verb = btn.verb_id; btn.selected = True
+                    self.clear_selection()
+                    self.selected_verb = btn.verb_id
+                    btn.selected = True
                 return True
         return False
 
@@ -1388,7 +1391,7 @@ class Inventory:
         self.active_item = None
 
     def add_item(self, item_id, name_fallback, img, actions=None, label_id=None):
-        if label_id and label_id in cfg.translation_manager.variables["items"]:
+        if label_id and label_id in cfg.tm.variables["items"]:
             final_name = cfg.tm.get("items", label_id)
         else:
             final_name = cfg.tm.get("items", item_id, name_fallback)
@@ -1584,7 +1587,7 @@ class DebugConsole:
             header_font = self.font
 
         # Usamos GAME_MSGS si está disponible, sino texto fijo
-        title = cfg.GAME_MSGS.get("DEBUG_TITLE", "DEBUG CONSOLE") if 'GAME_MSGS' in globals() else "DEBUG CONSOLE"
+        title = cfg.tm.get("menu", "DEBUG_TITLE", "DEBUG CONSOLE") if 'GAME_MSGS' in globals() else "DEBUG CONSOLE"
         h_txt = self.font.render(title, True, (200, 200, 200))
         screen.blit(h_txt, (self.rect.x + 5, self.rect.y + 2))
 
@@ -1738,7 +1741,7 @@ class CreditsWindow:
         # Borde y Título
         pygame.draw.rect(screen, self.border_color, self.rect, 2)
 
-        title_str = cfg.GAME_MSGS.get("CREDITS_TITLE", "CREDITS") if 'GAME_MSGS' in globals() else "CREDITS"
+        title_str = cfg.tm.get("menu", "CREDITS_TITLE", "CREDITS") if 'GAME_MSGS' in globals() else "CREDITS"
         h_txt = self.font.render(title_str, True, (40, 30, 10))
         screen.blit(h_txt, (self.rect.x + 5, self.rect.y + 2))
 
@@ -1769,10 +1772,11 @@ class CreditsWindow:
 
 
 class MapNode:
-    def __init__(self, scene_id, map_x, map_y, spawn_x, spawn_y, icon_file=None):
+    def __init__(self, scene_id, map_x, map_y, spawn_x, spawn_y, icon_file=None, scene_manager=None):
         self.scene_id = scene_id
+        self.scene_manager=scene_manager
         # Intenta obtener el nombre traducido, si no usa el ID
-        self.label = cfg.SCENE_NAMES.get(scene_id, scene_id)
+        self.label = cfg.tm.get("scenes", scene_id, scene_id)
 
         self.rect = pygame.Rect(map_x - 20, map_y - 20, 40, 40)
         self.center = (map_x, map_y)
@@ -1782,6 +1786,11 @@ class MapNode:
         if icon_file:
             # Usamos el gestor de recursos para cargar el pin
             self.image = RES_MANAGER.get_image(icon_file, cfg.OBJ_DIR)
+
+    def get_scene_name(self, scene_id):
+        if not self.scene_manager or scene_id not in self.scene_manager.scenes:
+            return scene_id
+        return self.scene_manager.scenes.get(scene_id).name
 
 
 class Movement:

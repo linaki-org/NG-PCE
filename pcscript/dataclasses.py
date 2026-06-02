@@ -14,7 +14,6 @@ class StateAssign:
 
 @dataclass
 class ObjAction:
-    obj: str | None   # None = bare call like "fracture"
     action: str
     arg: Any = None
 
@@ -22,7 +21,8 @@ class ObjAction:
 class EventName:
     actor: str
     verb: str | None = None
-    target: str | None = None
+    target1: str | None = None
+    target2: str | None = None
 
 @dataclass
 class Event:
