@@ -7,7 +7,8 @@ from pcscript.dataclasses import (Scene as dc_Scene,
                                   Hotspot as dc_Hotspot,
                                   Exit as dc_Exit,
                                   DynamicValue as dc_dynamic,
-                                  ObjAction as dc_Action)
+                                  ObjAction as dc_Action,
+                                  Ambient as dc_Ambient)
 import config as cfg
 import engine.script_runner as runner
 #Transitions ID definitions
@@ -18,6 +19,7 @@ TRANSITIONS = {"fade" : TRANSITION_FADE,
 
 GLOBAL_VARS=["GAME_AREA_HEIGHT", "LOOKAT", "WALK", "OPEN", "PUSH", "CLOSE", "PULL", "PICKUP", "USE", "TALKTO", "GIVE", "BACK", "true", "false",
              "LEFT", "RIGHT"]
+
 LOOKAT="LOOK AT"
 WALK="WALK"
 OPEN="OPEN"
@@ -53,7 +55,7 @@ GP_ACTIONS={"say" : "texto",
             "duration" : "text_time",
             "speaker" : "speaker"}
 
-ALL_ACTIONS=["say", "sound", "flag", "delitem", "anim", "duration", "speaker", "animate", "start_dialogue", "run"]
+ALL_ACTIONS=["say", "sound", "flag", "delitem", "anim", "duration", "speaker", "start_dialogue", "run"]
 
 def getprop(property):
     """Utility to automatically turn variable expressions (E.g scenes or translations) into their value"""
@@ -75,11 +77,11 @@ def dynalink(property):
 
 def load_scripts(scripts, deps):
     """Load provided scripts into the game"""
-    global game_play_event
+    global action_manager
 
     #Unpack provided ugly dependencies
     scene_manager = deps["scene_manager"]
-    game_play_event = deps["game_play_event"]
+    action_manager = deps["action_manager"]
 
     #First, load only scenes
     for object in scripts:
@@ -94,38 +96,51 @@ def load_scripts(scripts, deps):
         if isinstance(object, dc_Exit):
             load_exit(object, scene_manager)
 
+        if isinstance(object, dc_Ambient):
+            load_ambient(object, scene_manager)
+
 def check_properties(props, required_props, all_props, object_name):
     """Check if all required properties are present and all properties exists"""
     for prop in props:
         if prop not in all_props:
-            raise NameError(f"Unknown property {prop} for {object_name}")
+            raise NameError(f"Unknown property {prop} for {object_name}. Available props are {','.join(all_props)}")
 
     for prop in required_props:
         if prop not in props:
             raise TypeError(f"Missing required property {prop} for {object_name}")
 
+
+def run_action_funcs(funcs_to_call):
+    for func in funcs_to_call:
+        func()
+
+
 def generate_action_lambda(actions):
     if len(actions)==1 and actions[0].action=="say":  # Action is a simple say command
         return String(actions[0].arg, "descs", cfg.tm)
 
-    #Generate list of functions to call and args for game_play_events
+    #Generate list of functions to call
     funcs_to_call=[]
-    game_play_args={}
     for action in actions:
-        print("Action :", action)
         if isinstance(action, dc_Action):
             if action.action not in ALL_ACTIONS:
                 raise NameError(f"Action {action.action} was not found")
             if action.action in GP_ACTIONS:
-                action_key=GP_ACTIONS.get(action.action)
-                action_value=action.arg
                 if action.action in ["say"]:
                     action_value=String(action.arg, "descs", cfg.tm)
-                elif action.action in ["flag", "del", "anim", "speaker"]:
+                    funcs_to_call.append(lambda: action_manager.text_event(action_value))
+                if action.action in ["anim"]:
                     action_value=dynalink(action.arg)
-                game_play_args[action_key]=action_value
+                    funcs_to_call.append(lambda: action_manager.play_object_animation(action_value))
+                if action.action in ["flag"]:
+                    action_value=dynalink(action.arg)
+                    funcs_to_call.append(lambda: action_manager.flag_event(action_value))
+                if action.action in ["del"]:
+                    action_value=dynalink(action.arg)
+                    funcs_to_call.append(lambda: action_manager.delitem_event(action_value))
 
-    return lambda: game_play_event(**game_play_args)
+    return lambda: run_action_funcs(funcs_to_call)
+
 
 def translate_event_trigger(trigger):
     """Turn a Trigger object into a trigger string"""
@@ -147,6 +162,7 @@ def generate_actions(actions_defs):
         actions[trigger]=action
 
     return actions
+
 
 def load_scene(scene, scene_manager):
     props=scene.properties
@@ -193,7 +209,7 @@ def load_hotspot(hotspot, scene_manager):
     if "img" in props:
         args["image_file"] = props["img"]
     if "label" in props:
-        args["label_id"] = String(props["label"], "items", cfg.tm)
+        args["label"] = String(props["label"], "items", cfg.tm)
     if "hint" in props:
         args["hint_message"] = String(props["hint"], "descs", cfg.tm)
     if "scale" in props:
@@ -225,6 +241,7 @@ def load_hotspot(hotspot, scene_manager):
     scene = scene_manager.scenes.get(hotspot.scene)  # Retrieve the scene where the hotspot lives
     scene.add_hotspot_data(**args) #Create the hotspot data in the scene
 
+
 def load_exit(exit, scene_manager):
     props = exit.properties
     required_properties = ["x", "y", "w", "h", "target", "spawn_x", "spawn_y"]
@@ -246,3 +263,47 @@ def load_exit(exit, scene_manager):
 
     scene = scene_manager.scenes.get(exit.scene)  # Retrieve the scene where the exit lives
     scene.add_exit(**args) #Create the exit data in the scene
+
+def load_ambient(ambient, scene_manager):
+    props = ambient.properties
+    required_properties = ["x", "y", "img"]
+    all_properties = ["x", "y", "img", "frames", "speed", "scale", "label", "layer", "solid",
+                      "moveto_x", "moveto_y", "move_speed", "loop", "label", "walk_x", "walk_y"]
+    check_properties(props, required_properties, all_properties, ambient.name)
+
+    # Generate args dict for hotspot definition
+    args = {}
+    #args["name"] = ambient.name
+    args["x"] = props["x"]
+    args["y"]=props["y"]
+    args["image_file"] = props["img"]
+    if "label" in props:
+        args["label_id"] = String(props["label"], "items", cfg.tm)
+    if "hint" in props:
+        args["hint_message"] = String(props["hint"], "descs", cfg.tm)
+    if "scale" in props:
+        args["scale"] = props["scale"]
+    if "walk_x" in props and "walk_y" in props:
+        args["walk_to"] = (props["walk_x"], props["walk_y"])
+    if "moveto_x" in props and "moveto_y" in props:
+        args["move_to"] = (props["moveto_x"], props["moveto_y"])
+    if "frames" in props:
+        args["num_frames"] = props["frames"]
+    if "speed" in props:
+        args["anim_speed"] = props["speed"]
+    if "solid" in props:
+        args["solid"] = getprop(props["solid"])
+    if "facing" in props:
+        args["facing"] = getprop(props["facing"])
+    if "loop" in props:
+        args["loop_move"] = getprop(props["loop"])
+
+    if ambient.scene not in scene_manager.scenes:
+        raise NameError(f"Scene {ambient.scene} doesn't exist for ambient {ambient.name}")
+
+    #Generate action calls for this HS
+    #actions=generate_actions(hotspot.events)
+    #args["actions"]=actions
+
+    scene = scene_manager.scenes.get(ambient.scene)  # Retrieve the scene where the hotspot lives
+    scene.add_ambient(**args) #Create the hotspot data in the scene

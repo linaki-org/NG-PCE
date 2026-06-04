@@ -50,5 +50,11 @@ class Exit:
     events: list = field(default_factory=list)
 
 @dataclass
+class Ambient:
+    name: str
+    scene: str
+    properties: dict = field(default_factory=dict)
+
+@dataclass
 class DynamicValue:
     value: str

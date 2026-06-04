@@ -47,10 +47,10 @@ strange_machine is hotspot of town_hall:
     @lookat: say MACHINE_LOOK
     @use:
         say MACHINE_USE
-        animate strange_machine
+        anim strange_machine
     @push:
         say MACHINE_PUSH
-        animate strange_machine
+        anim strange_machine
 
 ambient_machine is ambient of town_hall:
     img: "animation_demo.png"
@@ -60,6 +60,10 @@ ambient_machine is ambient of town_hall:
     speed: 100
     scale: 0.4
     layer: BACK
+    solid: true
+    moveto_x: 0
+    moveto_y: 0
+    loop: true
 
 ambient_fire is ambient of town_hall:
     img: "hoguera.gif"
@@ -70,7 +74,6 @@ ambient_fire is ambient of town_hall:
     speed: 50
     scale: 1
     layer: BACK
-    @lookat: say BONFIRE_LOOK
 
 th_ex1 is exit of town_hall:
     x: 0

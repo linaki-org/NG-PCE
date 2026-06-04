@@ -499,3 +499,9 @@ class String:
     def upper(self):
         string=self.__repr__()
         return string.upper()
+
+
+class ActionsManager:
+    """Just a simple class to store refs to gameplay functions"""
+    def __init__(self):
+        pass

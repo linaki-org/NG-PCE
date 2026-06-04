@@ -45,6 +45,16 @@ class PCTransformer(Transformer):
             elif isinstance(s, Event):    exit.events.append(s)
         return exit
 
+    def ambient_def(self, items):
+        name, scene_name, statements = str(items[0]), str(items[1]), items[2]
+        ambient = Ambient(name=name, scene=scene_name)
+        for s in statements:
+            if isinstance(s, PropAssign):
+                ambient.properties[s.name] = s.value
+            elif isinstance(s, Event):
+                raise TypeError("An Ambient object cannot contain any event")
+        return ambient
+
     def def_block(self, items):     return items
     def cmd_block(self, items):     return items
     def def_statement(self, items): return items[0]
@@ -90,7 +100,6 @@ class PCTransformer(Transformer):
 
     def value(self, items):
         s = str(items[0])
-        print(s)
         if s in ("true", "false"):              return s == "true"
         if s.startswith('"') and s.endswith('"'): return s[1:-1]
         try:    return int(s)

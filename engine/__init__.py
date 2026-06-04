@@ -24,7 +24,7 @@ from classes import (
     AnimatedHotspot, AnimatedCharacter, SceneManager, DialogueSystem,
     TitleMenu, SaveLoadUI, LanguageUI, SystemMenu, TextBox, VerbMenu,
     Inventory, DebugConsole, CreditsWindow, MapSystem, Movement, CutsceneManager, update_graphics_metrics,
-    get_sharp_font, draw_text_sharp, TranslationManager, String
+    get_sharp_font, draw_text_sharp, TranslationManager, String, ActionsManager
 )
 
 from pcscript import parse_directory
@@ -745,24 +745,28 @@ CURRENT_STATE = GameState.TITLE  # para arrancar en el titulo
 # ==========================================
 #  7. FUNCIONES DE LÓGICA
 # ==========================================
-def game_play_event(texto=None, play_sound=None, flag=None, delete_item=None, anim=None, text_time=None, speaker=None,
-                    pos=None):  # <--- AÑADIDO pos=None
-    global SCREEN_OVERLAY_TEXT, TEXT_DISPLAY_TIMER, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, CURRENT_TEXT_POS
 
-    if texto:
-        SCREEN_OVERLAY_TEXT = texto
-        CURRENT_SPEAKER_REF = speaker
-        CURRENT_TEXT_POS = pos  # <--- AÑADIDO: Guardamos la posición personalizada
+def flag_event(flag):
+    GAME_STATE[flag] = True
+    debug_log(f"[STATE] Variable '{flag}' activated.")
+    debug_log(f"[EVENT] Flag activated: {flag}")
 
-        # Cálculo automático del tiempo
-        if text_time is None:
-            speed_val = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SPEED"]]
-            TEXT_DISPLAY_TIMER = max(1.5, len(texto) * speed_val)
-        else:
-            TEXT_DISPLAY_TIMER = text_time
+def text_event(texto, speaker=None, pos=None, text_time=None):
+    global SCREEN_OVERLAY_TEXT, CURRENT_SPEAKER_REF, CURRENT_TEXT_POS, TEXT_DISPLAY_TIMER
+    SCREEN_OVERLAY_TEXT = texto
+    CURRENT_SPEAKER_REF = speaker
+    CURRENT_TEXT_POS = pos  # <--- AÑADIDO: Guardamos la posición personalizada
 
-            # --- BLOQUE DE SONIDO MEJORADO (SOPORTA LISTAS Y CARGA DINÁMICA) ---
-    if play_sound and cfg.CONFIG["ENABLE_SOUND"]:
+    # Cálculo automático del tiempo
+    if text_time is None:
+        speed_val = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SPEED"]]
+        TEXT_DISPLAY_TIMER = max(1.5, len(texto) * speed_val)
+    else:
+        TEXT_DISPLAY_TIMER = text_time
+    debug_log(f"[EVENT] Text: {texto[:20]}...")  # Muestra los primeros 20 caracteres
+
+def sound_event(play_sound):
+    if cfg.CONFIG["ENABLE_SOUND"]:
         # 1. Convertimos a lista si es solo un texto, para tratarlo todo igual
         sonidos_a_reproducir = []
         if isinstance(play_sound, list):
@@ -789,23 +793,15 @@ def game_play_event(texto=None, play_sound=None, flag=None, delete_item=None, an
             # Si logramos tener el objeto sonido, play!
             if s:
                 s.play()
-    if flag:
-        GAME_STATE[flag] = True
-        debug_log(f"[STATE] Variable '{flag}' activated.")
+    debug_log(f"[EVENT] play_sound:{play_sound}")
 
-    if delete_item:
-        inventory.remove_item(delete_item)
-        inventory.active_item = None
+def delitem_event(delete_item):
+    inventory.remove_item(delete_item)
+    inventory.active_item = None
 
-    if anim:
-        CURRENT_ACTION_ANIM = anim
-    # texto al debug
-    if texto:
-        debug_log(f"[EVENT] Text: {texto[:20]}...")  # Muestra los primeros 20 caracteres
-    if flag:
-        debug_log(f"[EVENT] Flag activated: {flag}")
-    if play_sound:
-        debug_log(f"[EVENT] play_sound:{play_sound}")
+def anim_event(anim):
+    global CURRENT_ACTION_ANIM
+    CURRENT_ACTION_ANIM = anim
 
 
 def smart_move_to(target_x, target_y, callback=None):
@@ -846,8 +842,7 @@ def cutscene_anim_wrapper(anim_name):
 
 
 def cutscene_say_wrapper(text, duration):
-    # wrapper para llamar a game_play_event forzando que hable el player
-    game_play_event(texto=text, text_time=duration, speaker=player)
+    text_event(texto=text, text_time=duration, speaker=player)
 
 
 def cutscene_text_check():
@@ -863,6 +858,14 @@ cutscene_manager.set_dependencies(
     set_anim_func=cutscene_anim_wrapper,  # Función para forzar animación
     check_text_timer=cutscene_text_check  # Función para chequear tiempo texto
 )
+
+actionsManager=ActionsManager()
+actionsManager.smart_move_to=smart_move_to
+actionsManager.text_event=text_event
+actionsManager.sound_event=sound_event
+actionsManager.delitem_event=delitem_event
+actionsManager.anim_event=anim_event
+actionsManager.flag_event=flag_event
 
 
 # ===========================================
@@ -1004,7 +1007,7 @@ def play_object_animation(object_name, texto_feedback=None):
             break
 
     if found and texto_feedback:
-        game_play_event(texto=texto_feedback)
+        text_event(texto=texto_feedback)
     elif not found:
         print(f"[ERROR] No se encontró el objeto animado: {object_name}")
 
@@ -1022,9 +1025,11 @@ def change_state_object(object_name, frame_idx, texto_feedback=None):
             break
 
     if found and texto_feedback:
-        game_play_event(texto=texto_feedback, text_time=2.0)
+        text_event(texto=texto_feedback, text_time=2.0)
     elif not found:
         print(f"[ERROR] No se encontró el objeto animado: {object_name}")
+
+actionsManager.change_state_object=change_state_object
 
 
 def crafting(id_item1, id_item2, id_nuevo_item, new_graph_object, flag_a_activar):
@@ -1057,7 +1062,8 @@ def crafting(id_item1, id_item2, id_nuevo_item, new_graph_object, flag_a_activar
     # 4. Mensaje correcto: Usamos name1 y name2 (los ingredientes)
     texto_combinar = cfg.tm.get("msgs", "CRAFTING_DONE").format(name1, name2)
 
-    game_play_event(texto=texto_combinar, play_sound="medal")
+    text_event(texto=texto_combinar)
+    sound_event("medal")
 
 
 def change_player_active(nuevo_id):
@@ -1134,10 +1140,12 @@ def change_player_active(nuevo_id):
 
     # 7. Feedback visual/sonoro
     texto_swap = cfg.tm.get("msgs", "CHAR_SWAP").format(nuevo_id)
-    game_play_event(texto=texto_swap, play_sound="medal")
+    text_event(texto=texto_swap)
+    sound_event("medal")
     global CURRENT_ACTION_ANIM
     CURRENT_ACTION_ANIM = None
 
+actionsManager.change_player_active=change_player_active
 
 # ==========================================
 #  FUNCIONES AUXILIARES DE WINDOWS
@@ -1188,6 +1196,11 @@ else:
 
     CURRENT_STATE = GameState.TITLE
 
+actionsManager.play_scene_music=play_scene_music
+actionsManager.stop_scene_music=stop_scene_music
+actionsManager.execute_hotspot_action=execute_hotspot_action
+actionsManager.play_object_animation=play_object_animation
+actionsManager.load_and_open_map=load_and_open_map
 
 # ==========================================
 #  BUCLE PRINCIPAL
@@ -1289,7 +1302,7 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
 
             # (Optional) Feedback also for speed
             prefix = cfg.tm.get("msgs", "MSG_SPEED", "Speed: ")
-            game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
+            text_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
         # 2. CAMBIO DE TAMAÑO (LO QUE PEDISTE)
         elif context_label == cfg.tm.get("menu", "SIZE_LABEL", "SIZE"):
@@ -1303,7 +1316,7 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             # --- RESTORED LINE ---
             # Muestra "Tamaño: GRANDE" usando el sistema de mensajes del juego
             prefix = cfg.tm.get("msgs", "MSG_SIZE", "Size: ")
-            game_play_event(texto=f"{prefix}{item_label}", text_time=1.5)
+            text_event(texto=f"{prefix}{item_label}", text_time=1.5)
 
     # --- MENU SOUND ---
     elif menu_title == cfg.tm.get("menu", "SOUND_TITLE", "SOUND"):
@@ -1371,7 +1384,7 @@ def handle_input_explore(event):
                 raw_action()
             else:
                 desc = raw_action if raw_action else f"{cfg.tm.get("msgs", 'DEFAULT_LOOK')}{clicked_inv_item.name}."
-                game_play_event(texto=desc, speaker=player)
+                text_event(texto=desc, speaker=player)
 
             verb_menu.clear_selection()
             inventory.active_item = None
@@ -1393,7 +1406,7 @@ def handle_input_explore(event):
                     if callable(action_reverse):
                         action_reverse()
                     else:
-                        game_play_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
+                        text_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
 
                 inventory.active_item = None
                 verb_menu.clear_selection()
@@ -1413,7 +1426,7 @@ def handle_input_explore(event):
                 inventory.active_item = None
 
             elif isinstance(action, str) and not force_select:
-                game_play_event(texto=action, speaker=player)
+                text_event(texto=action, speaker=player)
                 verb_menu.clear_selection()
                 inventory.active_item = None
 
@@ -1509,11 +1522,11 @@ def handle_input_explore(event):
                         response()
                     elif isinstance(response, str) or isinstance(response, String):
                         # Traducción de la respuesta si es texto
-                        game_play_event(texto=response, speaker=player)
+                        text_event(texto=response, speaker=player)
                     else:
                         CURRENT_ACTION_ANIM = None
                         # Mensaje de error genérico
-                        game_play_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
+                        text_event(texto=cfg.tm.get("msgs", "DOES_NOT_WORK"), speaker=player)
 
                     inventory.active_item = None
                     verb_menu.clear_selection()
@@ -1936,10 +1949,10 @@ def logic_save_game(filename):
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         save_load_ui.scan_saves()  # Refrescar lista visual
-        game_play_event(texto=cfg.tm.get("msgs", "SAVE_SUCCESS"), text_time=2.0)
+        text_event(texto=cfg.tm.get("msgs", "SAVE_SUCCESS"), text_time=2.0)
     except Exception as e:
         print(f"Error Saving: {e}")
-        game_play_event(texto=cfg.tm.get("msgs", "SAVE_ERROR"), text_time=2.0)
+        text_event(texto=cfg.tm.get("msgs", "SAVE_ERROR"), text_time=2.0)
 
 
 def logic_load_game(filename):
@@ -1991,11 +2004,11 @@ def logic_load_game(filename):
 
         # 6. Éxito -> Forzar estado EXPLORE
         set_state(GameState.EXPLORE)
-        game_play_event(texto=cfg.tm.get("msgs", "LOAD_SUCCESS"), text_time=2.0)
+        text_event(texto=cfg.tm.get("msgs", "LOAD_SUCCESS"), text_time=2.0)
 
     except Exception as e:
         print(f"Error Load: {e}")
-        game_play_event(texto=cfg.tm.get("msgs", "LOAD_CORRUPT", "Error"), text_time=2.0)
+        text_event(texto=cfg.tm.get("msgs", "LOAD_CORRUPT", "Error"), text_time=2.0)
 
 
 def logic_close_menu():
@@ -2142,7 +2155,7 @@ def mainloop():
                             TEXT_DISPLAY_TIMER = 0
                             if dialogue_system.active:
                                 if dialogue_system.is_player_talking:
-                                    dialogue_system.continue_dialogue(game_play_event)
+                                    dialogue_system.continue_dialogue(actionsManager)
                                 elif dialogue_system.closing:
                                     dialogue_system.end_dialogue()
                                 else:
@@ -2154,13 +2167,13 @@ def mainloop():
                         dialogue_system.scroll_down()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mx, my = get_virtual_mouse_pos()
-                    if not dialogue_system.handle_click(mx, my, game_play_event, player):
+                    if not dialogue_system.handle_click(mx, my, actionsManager, player):
                         if SCREEN_OVERLAY_TEXT != "":
                             SCREEN_OVERLAY_TEXT = ""
                             TEXT_DISPLAY_TIMER = 0
                             if dialogue_system.active:
                                 if dialogue_system.is_player_talking:
-                                    dialogue_system.continue_dialogue(game_play_event)
+                                    dialogue_system.continue_dialogue(actionsManager)
                                 elif dialogue_system.closing:
                                     dialogue_system.end_dialogue()
                                 else:
@@ -2249,7 +2262,7 @@ def mainloop():
                     # Si estamos en diálogo, gestionamos el turno al acabar el texto
                     if dialogue_system.active:
                         if dialogue_system.is_player_talking:
-                            dialogue_system.continue_dialogue(game_play_event)
+                            dialogue_system.continue_dialogue(actionsManager)
                         elif dialogue_system.closing:
                             dialogue_system.end_dialogue()
                         else:
@@ -2453,26 +2466,12 @@ def load_scripts(directory):
     ## Ugly definition of the dependencies for the load_scripts function
     dependencies = {
         "scene_manager": scene_manager,
-        "player": player,
-        "inventory": inventory,
-        "game_play_event": game_play_event,
-        "play_scene_music": play_scene_music,
-        "stop_scene_music": stop_scene_music,
+        "action_manager": actionsManager,
         "cutscene_manager": cutscene_manager,
         "dialogue_system": dialogue_system,
-        "map_system": map_system,
-        "ending_manager": ending_manager,
-        "GAME_STATE": GAME_STATE,
-        "PLAYER_CONFIG": cfg.PLAYER_CONFIG,
-
-        # Funciones lógicas
-        "smart_move_to": smart_move_to,
-        "execute_hotspot_action": execute_hotspot_action,
-        "change_player_active": change_player_active,
-        "crafting": crafting,
-        "play_object_animation": play_object_animation,
-        "change_state_object": change_state_object,
-        "load_and_open_map": load_and_open_map,
+        "map_system": map_system
     }
+
+
 
     loader.load_scripts(pcs, dependencies)

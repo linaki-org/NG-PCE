@@ -32,6 +32,9 @@ trashcan is hotspot of panoramic:
         trashcan.state: 0
         say TRASH_CLOSE
         anim close
+    @use:
+        say "Wow ! You triggered a secret animation !"
+        say "Day of the Tentacle is a game created in 1995 by LucasArt games"
 
 garba is hotspot of panoramic:
     img: "garba_tr.gif"
@@ -44,6 +47,7 @@ garba is hotspot of panoramic:
     walk_x: 1365
     walk_y: 360
     facing: LEFT
+    solid: true
 
     @talkto: start_dialogue garba_dialogue
     @lookat: say NPC_GARBA_LOOK
@@ -93,3 +97,4 @@ flashlight_with_bat is hotspot of panoramic:
     @lookat: say FLASHLIGHT_FULL_LOOK
     @use: say FLASHLIGHT_FULL_USE
     @open: say FLASHLIGHT_FULL_OPEN
+

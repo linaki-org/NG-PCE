@@ -1,0 +1,37 @@
+garba_dialogue is dialogue:
+    start:
+        - text: GARBA_START_OPT1
+        resp: GARBA_START_ANS1
+        cond: linterna_con_pilas_recogida
+        next: got_flashlight
+
+        - text: GARBA_START_OPT2
+        reps: GARBA_START_ANS2
+        next: want_a_flashlight
+
+        - text: GARBA_START_OPT3
+        reps: GARBA_START_ANS3
+        next: start
+
+        - text: GARBA_START_OPT4
+        reps: GARBA_START_ANS4
+        next: EXIT
+
+    want_a_flashlight:
+        - text: GARBA_WANT_OPT1
+        resp: GARBA_WANT_ANS1
+        next: want_a_flashlight
+        once: true
+
+        - text: GARBA_WANT_OPT2
+        resp: GARBA_WANT_ANS2
+        next: got_a_flashlight
+
+        - text: GARBA_WANT_OPT3
+        resp: GARBA_WANT_ANS3
+        next: start
+
+    got_a_flashlight:
+        - text: GARBA_HAVE_OPT1
+        resp: GARBA_HAVE_ANS1
+        next: start

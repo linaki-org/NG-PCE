@@ -23,7 +23,7 @@ pcs_grammar = r"""
     exit_def:    NAME "is" "exit" "of" NAME ":" def_block
     ambient_def: NAME "is" "ambient" "of" NAME ":" def_block
     script_def:  NAME "is" "script" ":" cmd_block
-    dialogue_def:NAME "is" "dialogue" ":" def_block
+    dialogue_def:NAME "is" "dialogue" ":" dialogue_block
 
     def_block: _NEWLINE _INDENT def_statement+ _DEDENT
 
@@ -37,11 +37,14 @@ pcs_grammar = r"""
     cmd_statement: state_assign _NEWLINE?
                  | action _NEWLINE?
 
-    // NAME.prop: value  sets a property on another object
     state_assign: NAME "." NAME ":" value
-
-    // Everything else is a bare action call with an optional arg
     action: NAME value
+    
+    dialogue_block: _NEWLINE _INDENT branch_def+ _DEDENT
+    branch_def: NAME ":" branch_block
+    branch_block: _NEWLINE _INDENT option_def+ _DEDENT
+    option_def: "-" option_block
+    option_block: (prop_assign _NEWLINE?)+
 
     value: STRING | NUMBER | BOOL | NAME
 
