@@ -1,7 +1,8 @@
 # Next-Generation Point-n-Click Engine
 ## Introduction
-NG-PCE is the next-generation successor of PCS-ANS.  
-Its goal is to fill all problem that PCS-ANS had, like the lack of object-oriented resources management, or the not-so-easy JSON-based descriptive language, while keeping the SCUMM-like philosophy.
+NG-PCE is a modern Point & Click engine inspired by SCUMM, the engine Lucasart used to create games such as DOTT, Sam & Max HTR or CMI.  
+NG-PCE is the next-generation successor of PCS-ANS and its goal is to fill all problem that PCS-ANS had,
+like the lack of object-oriented resources management, or the not-so-easy JSON-based descriptive language.
 
 As I am now actively working on Bad Tentacle, my take on making a sequel to the Day of the Tentacle game, I needed a powerful game engine, and PCS-ANS just didn't fit anymore.
 

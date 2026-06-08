@@ -963,7 +963,7 @@ def execute_hotspot_action(hotspot, verb):
         # Feedback de texto (Traducido si es necesario)
         custom_text = hotspot.actions.get("PICK UP")
 
-        SCREEN_OVERLAY_TEXT = custom_text if custom_text else f"{cfg.tm.get("msgs", 'PICKED_UP')}{hotspot.label}."
+        SCREEN_OVERLAY_TEXT = custom_text if custom_text else f"{cfg.tm.get('msgs', 'PICKED_UP')}{hotspot.label}."
 
         CURRENT_SPEAKER_REF = player
         CURRENT_TEXT_POS = None
@@ -1383,7 +1383,7 @@ def handle_input_explore(event):
             if callable(raw_action):
                 raw_action()
             else:
-                desc = raw_action if raw_action else f"{cfg.tm.get("msgs", 'DEFAULT_LOOK')}{clicked_inv_item.name}."
+                desc = raw_action if raw_action else f"{cfg.tm.get('msgs', 'DEFAULT_LOOK')}{clicked_inv_item.name}."
                 text_event(texto=desc, speaker=player)
 
             verb_menu.clear_selection()
@@ -2460,7 +2460,7 @@ def mainloop():
 
 def load_scripts(directory):
     """Load the PCScripts in <directory> and inject them in the game"""
-    print("Loading game scripts...")
+    print("[SYSTEM] Loading game scripts...")
     pcs=parse_directory(directory)
 
     ## Ugly definition of the dependencies for the load_scripts function

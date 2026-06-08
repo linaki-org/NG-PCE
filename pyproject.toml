@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ng-pce"
+version = "0.0.3"
+authors = [
+  { name="Linaki.0rg", email="linaki@linaki.org" },
+]
+description = "A modern Point & Click engine inspired by SCUMM"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/linaki-org/ng-pce"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/ng_pce"
+]
+exclude = [
+  "*.json",
+  "pkg/_compat.py",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ng_pce"]
