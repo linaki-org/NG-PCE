@@ -4,11 +4,11 @@ import math
 import heapq
 import gc
 
-import config as cfg
-from classes.resources import RES_MANAGER
-from scenes.variables import GAME_STATE
-from classes.commons import TRANSITION_FADE, TRANSITION_ZOOM, draw_text_sharp
-from classes.ui import MapNode
+import ng_pce.config as cfg
+from ng_pce.classes.resources import RES_MANAGER
+from ng_pce.scenes.variables import GAME_STATE
+from ng_pce.classes.commons import TRANSITION_FADE, TRANSITION_ZOOM, draw_text_sharp
+from ng_pce.classes.ui import MapNode
 
 
 class Scene:

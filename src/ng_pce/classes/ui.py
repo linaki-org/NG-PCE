@@ -1,14 +1,14 @@
 import json
 import yaml
-import config as cfg
+import ng_pce.config as cfg
 import pygame
 import os
 import math
-from classes.commons import (get_sharp_font,
+from ng_pce.classes.commons import (get_sharp_font,
                             get_virtual_mouse_pos,
                             draw_text_sharp,
                             scale_factor)
-from classes.resources import RES_MANAGER
+from ng_pce.classes.resources import RES_MANAGER
 
 VERB_STYLE = cfg.VERB_STYLE
 DIALOGUE_BTN_STYLE = VERB_STYLE

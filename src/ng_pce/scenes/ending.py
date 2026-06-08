@@ -1,8 +1,8 @@
 import pygame
 import os
-from config import CONFIG, UI_FONT_PATH
-from scenes.variables import GameState
-import config as cfg
+from ng_pce.config import CONFIG, UI_FONT_PATH
+from ng_pce.scenes.variables import GameState
+import ng_pce.config as cfg
 
 
 # ==========================================

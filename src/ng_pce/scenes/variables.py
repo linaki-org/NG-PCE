@@ -1,4 +1,4 @@
-import config as cfg
+import ng_pce.config as cfg
 
 GAME_STATE = cfg.GAME_STATE.copy()
 

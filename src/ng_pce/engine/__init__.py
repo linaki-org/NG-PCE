@@ -13,21 +13,21 @@ import json
 import datetime
 import yaml
 
-import config as cfg
+import ng_pce.config as cfg
 
 # Scenes imports
-from scenes.variables import GAME_STATE, GameState
-from scenes.intro import IntroManager
-from scenes.ending import EndingManager
-import engine.script_loader as loader
-from classes import (
+from ng_pce.scenes.variables import GAME_STATE, GameState
+from ng_pce.scenes.intro import IntroManager
+from ng_pce.scenes.ending import EndingManager
+import ng_pce.engine.script_loader as loader
+from ng_pce.classes import (
     AnimatedHotspot, AnimatedCharacter, SceneManager, DialogueSystem,
     TitleMenu, SaveLoadUI, LanguageUI, SystemMenu, TextBox, VerbMenu,
     Inventory, DebugConsole, CreditsWindow, MapSystem, Movement, CutsceneManager, update_graphics_metrics,
     get_sharp_font, draw_text_sharp, TranslationManager, String, ActionsManager
 )
 
-from pcscript import parse_directory
+from ng_pce.pcscript import parse_directory
 
 globals().update(cfg.CONFIG)  # Inject all config dict directly in the global dict
 

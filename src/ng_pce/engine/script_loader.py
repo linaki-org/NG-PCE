@@ -1,16 +1,16 @@
 """The Script_loader is in charge to load the parsed scripts to the game"""
 
-from classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM, \
+from ng_pce.classes import Scene, SceneExit, TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_UP, TRANSITION_ZOOM, \
     String
-from config import GLOBAL_STATE, GAME_AREA_HEIGHT
-from pcscript.dataclasses import (Scene as dc_Scene,
+from ng_pce.config import GLOBAL_STATE, GAME_AREA_HEIGHT
+from ng_pce.pcscript.dataclasses import (Scene as dc_Scene,
                                   Hotspot as dc_Hotspot,
                                   Exit as dc_Exit,
                                   DynamicValue as dc_dynamic,
                                   ObjAction as dc_Action,
                                   Ambient as dc_Ambient)
-import config as cfg
-import engine.script_runner as runner
+import ng_pce.config as cfg
+import ng_pce.engine.script_runner as runner
 #Transitions ID definitions
 TRANSITIONS = {"fade" : TRANSITION_FADE,
                "slide_left" : TRANSITION_SLIDE_LEFT,

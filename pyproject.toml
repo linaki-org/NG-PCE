@@ -15,8 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-license = "MIT"
-license-files = ["LICEN[CS]E*"]
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
+dependencies=["pygame", "lark", "pyyaml", "typer"]
 
 [project.urls]
 Homepage = "https://github.com/linaki-org/ng-pce"
@@ -32,3 +34,6 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ng_pce"]
+
+[project.scripts]
+pce = "ng_pce.cli:app"

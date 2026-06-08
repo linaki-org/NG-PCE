@@ -1,8 +1,8 @@
 import os
-import config as cfg
+import ng_pce.config as cfg
 import pygame
-from classes.commons import TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_RIGHT, TRANSITION_SLIDE_UP, TRANSITION_SLIDE_DOWN, TRANSITION_ZOOM
-from classes.resources import RES_MANAGER
+from ng_pce.classes.commons import TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_RIGHT, TRANSITION_SLIDE_UP, TRANSITION_SLIDE_DOWN, TRANSITION_ZOOM
+from ng_pce.classes.resources import RES_MANAGER
 
 class Animation:
     def __init__(self, spritesheet_file, num_frames, frame_width, frame_height, frame_duration=100):

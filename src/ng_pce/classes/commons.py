@@ -1,4 +1,4 @@
-import config as cfg
+import ng_pce.config as cfg
 import pygame
 
 # ==========================================
