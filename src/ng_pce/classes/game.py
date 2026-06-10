@@ -3,6 +3,8 @@ import ng_pce.config as cfg
 import pygame
 from ng_pce.classes.commons import TRANSITION_FADE, TRANSITION_SLIDE_LEFT, TRANSITION_SLIDE_RIGHT, TRANSITION_SLIDE_UP, TRANSITION_SLIDE_DOWN, TRANSITION_ZOOM
 from ng_pce.classes.resources import RES_MANAGER
+from ng_pce.pcscript.dataclasses import DynamicValue
+
 
 class Animation:
     def __init__(self, spritesheet_file, num_frames, frame_width, frame_height, frame_duration=100):
@@ -467,14 +469,17 @@ class TranslationManager:
 class String:
     """New class representing a string displayed on screen. It is an abstraction layer for the translation model;
     you use it like a string, but it changes with the current language behind the hood"""
-    def __init__(self, value, namespace, manager):
+    def __init__(self, value, namespace, manager, dynamic=False):
         self.manager=manager
-        if isinstance(value, str): #Value is a simple string
+        if isinstance(value, str) and not dynamic: #Value is a simple string
             self.isDynamic=False
             self.staticString=value
         else:
             self.isDynamic=True
-            self.dynamicVar=value.value
+            if isinstance(value, DynamicValue):
+                self.dynamicVar=value.value
+            else:
+                self.dynamicVar=value
             self.dynamicNamespace=namespace
 
     def __repr__(self):

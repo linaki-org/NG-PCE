@@ -54,7 +54,6 @@ def load_translations(filename=cfg.DEFAULT_LANG_FILE):
 #  GESTOR DE CAMBIO DE IDIOMA
 # ==========================================
 
-cfg.tm=TranslationManager(cfg.DEFAULT_LANG_FILE)
 
 # EN main.py
 
@@ -111,99 +110,6 @@ def reload_game_texts(filename):
             elif item.id in cfg.tm.variables["items"]:
                 item.name = cfg.tm.get("items", item.id)
         inventory.update_visible()
-
-
-# --- MODIFICACIÓN DEL INICIO  TEXTOS DINÁMICOS---
-reload_game_texts(cfg.DEFAULT_LANG_FILE)
-
-# Variables Globales de UI y Sistema
-TEXT_DISPLAY_TIMER = 0
-INFO_TEXT_TIMER = 0
-SCREEN_OVERLAY_TEXT = ""
-CURRENT_CURSOR_STATE = cfg.UI_CONFIG["DEFAULT_CURSOR_STATE"]
-CURRENT_ACTION_ANIM = None
-MUSIC_STOP_TIME = 0.0
-LAST_EXIT_CLICK_TIME = 0  # --- NUEVO: Variable para el doble clic ---
-DOUBLE_CLICK_THRESHOLD = cfg.UI_CONFIG["DOUBLE_CLICK_THRESHOLD"]  # Milisegundos para considerar doble clic
-
-# ==========================================
-#  GESTOR DE RECURSOS PRE-CACHE
-# ==========================================
-# enviado a otro fichero
-# Variable para saber QUIÉN está hablando (objeto o None para narrador)
-CURRENT_SPEAKER_REF = None
-CURRENT_TEXT_POS = None
-
-# ==========================================
-#  cfg.CONFIGURACIÓN DE DIÁLOGOS
-# ==========================================
-DIALOGUE_STYLE = cfg.UI_CONFIG["DIALOGUE_STYLE"]
-
-# ==========================================
-#  INICIALIZACIÓN Y SONIDOS
-# ==========================================
-pygame.init()
-# 1. La Ventana Real (El marco de Windows) -> Usa WINDOW_WIDTH / HEIGHT
-# muy borroso pero rapido con : window_flags = pygame.RESIZABLE | pygame.SCALED
-window_flags = pygame.RESIZABLE
-real_window = pygame.display.set_mode((cfg.CONFIG["WINDOW_WIDTH"], cfg.CONFIG["WINDOW_HEIGHT"]), window_flags)
-pygame.display.set_caption(cfg.CONFIG["WINDOW_TITLE"])
-
-# =====================================================
-#  PANTALLA DE CARGA
-# =====================================================
-# Creamos una fuente temporal básica del sistema
-loading_font = pygame.font.SysFont(None, 20)
-loading_text = loading_font.render("Loading ...", True, (255, 255, 255))  # White
-powered_by_text = loading_font.render("Powered by NG-PCE", True, (200, 200, 200))  # Light grey
-real_window.fill((0, 0, 0))  # Limpiamos en negro
-text_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - loading_text.get_width() // 2
-text_y = cfg.CONFIG["WINDOW_HEIGHT"] // 2
-powered_by_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - powered_by_text.get_width() // 2
-powered_by_y = cfg.CONFIG["WINDOW_HEIGHT"] * 0.75
-real_window.blit(loading_text, (text_x, text_y))
-real_window.blit(powered_by_text, (powered_by_x, powered_by_y))
-
-# ¡IMPORTANTE! Forzamos la actualización de la pantalla AHORA MISMO
-pygame.display.flip()
-# 2. El Lienzo Virtual (Tu juego interno) -> Usa GAME_WIDTH / HEIGHT
-# AQUÍ ESTABA EL ERROR ANTES, ahora ya existe la clave correcta.
-screen = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
-clock = pygame.time.Clock()
-# Variables para gestionar el escalado del ratón
-scale_factor = 1.0
-offset_x = 0
-offset_y = 0
-
-# --- GESTOR DE SONIDOS GLOBAL ---
-if cfg.CONFIG["ENABLE_SOUND"]:
-    try:
-        if not pygame.mixer.get_init(): pygame.mixer.init()
-        # --- SONIDOS DE PASOS ---
-
-        for key, filename in cfg.STEP_TYPES.items():
-            path = os.path.join(cfg.SND_DIR, filename)
-            if os.path.exists(path):
-                s = pygame.mixer.Sound(path)
-                s.set_volume(0.4)  # Volumen de pasos
-                cfg.SOUNDS[key] = s  # AHORA ESTO FUNCIONARÁ PORQUE cfg.SOUNDS YA EXISTE
-            else:
-                # Fallback: Si falta uno específico, usamos el default si existe
-                if key != "step" and "step" in cfg.SOUNDS:
-                    cfg.SOUNDS[key] = cfg.SOUNDS["step"]
-                else:
-                    print(f"[WARNING] Missing sound: {filename}")
-
-        # --- OTROS SONIDOS ---
-        medal_path = os.path.join(cfg.SND_DIR, "medal.ogg")
-        if os.path.exists(medal_path):
-            cfg.SOUNDS["medal"] = pygame.mixer.Sound(medal_path)
-            cfg.SOUNDS["medal"].set_volume(0.5)
-
-        # Añade aquí el resto de sonidos puntuales (church-bell, etc)...
-
-    except Exception as e:
-        print(f"[ERROR] Loading sounds: {e}")
 
 
 # ==========================================
@@ -387,9 +293,7 @@ def enable_game_help():
 #  1. UTILIDADES Y CURSOR
 # ==========================================
 # a tomar por culo
-pygame.mouse.set_visible(False)
 
-CURSOR_IMGS = {}
 
 
 def init_cursor():
@@ -429,7 +333,7 @@ def load_cursor_images():
                 imgs.append(imgs[0])
             CURSOR_IMGS[verb] = imgs
         except Exception as e:
-            print(f"[ERROR] Error loading cursor{verb}: {e}")
+            print(f"[ERROR] Error loading cursor '{verb}': {e}")
 
 
 def get_scene_name(scene_id):
@@ -671,8 +575,6 @@ def sync_states():
 #  6. INICIALIZACIÓN Y CARGA DE CONTENIDO
 # ==========================================
 
-debug_console = DebugConsole()
-credits_window = CreditsWindow()
 
 
 def reset_game_ui_state():
@@ -697,50 +599,6 @@ def debug_log(*args):
         debug_console.log(*args)
 
 
-init_cursor()
-
-# --- AQUÍ ESTÁN LOS CAMBIOS CRÍTICOS ---
-scene_manager = SceneManager()
-# AHORA EL PLAYER SE CARGA USANDO EL ID DE LA cfg.CONFIGURACIÓN
-player = AnimatedCharacter(
-    400, 300,
-    char_id=cfg.PLAYER_CONFIG["CHAR_ID"],
-    text_color=cfg.PLAYER_CONFIG["TEXT_COLOR"]
-)
-# ¡¡¡LÍNEA NUEVA OBLIGATORIA!!!
-# Registramos al jugador en el manager para siempre
-movement = Movement()
-textbox = TextBox()
-verb_menu = VerbMenu()
-inventory = Inventory()
-cutscene_manager = CutsceneManager()
-system_menu = SystemMenu()
-title_menu = TitleMenu()
-dialogue_system = DialogueSystem()
-save_load_ui = SaveLoadUI()
-language_ui = LanguageUI()
-scene_manager.set_ui_callback(reset_game_ui_state)  # Le pasamos la función de limpieza al SceneManager
-scene_manager.set_player(player)  # CONEXIÓN JUGADOR (Recuerda lo que mencioné en el reporte):
-# intro está en otro file
-intro_manager = IntroManager(
-    set_state_callback=set_state,  # Función para cambiar estado
-    play_music_callback=play_scene_music,  # Función para tocar música
-    scene_manager_ref=scene_manager,  # Objeto scene_manager
-    get_texts_callback=lambda: cfg.tm.variables["cine"]  # Lambda para obtener textos actuales
-)
-# ending está en otro file
-ending_manager = EndingManager(
-    set_state_callback=set_state,  # Para volver al Título al acabar
-    play_music_callback=play_scene_music,  # Para poner la música de créditos
-    get_texts_callback=lambda: cfg.tm.variables["cine"]
-)
-# Inicializamos el sistema de mapas
-map_system = MapSystem("mapa1.jpg", scene_manager)
-
-# Estados del juego
-# CURRENT_STATE = GameState.EXPLORE       #para arrancar en el juego
-CURRENT_STATE = GameState.TITLE  # para arrancar en el titulo
-
 
 # ==========================================
 #  7. FUNCIONES DE LÓGICA
@@ -757,12 +615,26 @@ def text_event(texto, speaker=None, pos=None, text_time=None):
     CURRENT_SPEAKER_REF = speaker
     CURRENT_TEXT_POS = pos  # <--- AÑADIDO: Guardamos la posición personalizada
 
-    # Cálculo automático del tiempo
-    if text_time is None:
-        speed_val = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SPEED"]]
-        TEXT_DISPLAY_TIMER = max(1.5, len(texto) * speed_val)
+    if isinstance(texto, String):
+        text_key=texto.dynamicVar
     else:
-        TEXT_DISPLAY_TIMER = text_time
+        text_key=texto
+
+    if os.path.exists(os.path.join(cfg.VOICE_DIR, text_key+".ogg")):
+        # Voice exists, play it and use its duration
+        voice_path=os.path.join(cfg.VOICE_DIR, text_key+".ogg")
+        debug_log(f"Voice exists in {voice_path}")
+        voice=pygame.mixer.Sound(voice_path)
+        TEXT_DISPLAY_TIMER=voice.get_length()
+        voice.play()
+    else:
+        debug_log(f"Unable to find voice {text_key}")
+        # Cálculo automático del tiempo
+        if text_time is None:
+            speed_val = cfg.TEXT_CONFIG[cfg.TEXT_CONFIG["CURRENT_SPEED"]]
+            TEXT_DISPLAY_TIMER = max(1.5, len(texto) * speed_val)
+        else:
+            TEXT_DISPLAY_TIMER = text_time
     debug_log(f"[EVENT] Text: {texto[:20]}...")  # Muestra los primeros 20 caracteres
 
 def sound_event(play_sound):
@@ -827,7 +699,7 @@ def smart_move_to(target_x, target_y, callback=None):
         CURRENT_ACTION_ANIM = None
     else:
         movement.stop()
-        textbox.set_text(cfg.tm.get("msgs", "CANNOT_REACH"))
+        text_event(String("CANNOT_REACH", "msgs", cfg.tm, True))
 
 
 def cutscene_face_wrapper(direction):
@@ -849,23 +721,6 @@ def cutscene_text_check():
     # Devuelve el tiempo restante del texto para saber si acabó
     return TEXT_DISPLAY_TIMER
 
-
-# INYECTAMOS LAS DEPENDENCIAS
-cutscene_manager.set_dependencies(
-    smart_move_func=smart_move_to,  # Función de movimiento inteligente
-    say_func=cutscene_say_wrapper,  # Función para hablar
-    face_func=cutscene_face_wrapper,  # Función para mirar a cámara
-    set_anim_func=cutscene_anim_wrapper,  # Función para forzar animación
-    check_text_timer=cutscene_text_check  # Función para chequear tiempo texto
-)
-
-actionsManager=ActionsManager()
-actionsManager.smart_move_to=smart_move_to
-actionsManager.text_event=text_event
-actionsManager.sound_event=sound_event
-actionsManager.delitem_event=delitem_event
-actionsManager.anim_event=anim_event
-actionsManager.flag_event=flag_event
 
 
 # ===========================================
@@ -973,24 +828,13 @@ def execute_hotspot_action(hotspot, verb):
 
     # CASO C: Es TEXTO (Look At, etc.)
     if res:
-        SCREEN_OVERLAY_TEXT = res  # 'res' ya viene traducido del paso 3
-        CURRENT_SPEAKER_REF = player
-        CURRENT_TEXT_POS = None
-
-        # Cálculo de tiempo dinámico según longitud
-        TEXT_DISPLAY_TIMER = max(2.0, len(str(res)) * 0.08)
-
-        verb_traducido = cfg.tm.get("verbs", verb)
-        textbox.set_text(f"{verb_traducido} {hotspot.label}")
+        text_event(res, player)
 
     # CASO D: NO HAY ACCIÓN DEFINIDA
     else:
         # Solo mostrar error si no es caminar
         if verb != "WALK":
-            SCREEN_OVERLAY_TEXT = cfg.tm.get("msgs", "CANNOT_DO")
-            CURRENT_SPEAKER_REF = player
-            CURRENT_TEXT_POS = None
-            TEXT_DISPLAY_TIMER = 2.0
+            text_event(String("CANNOT_DO", "msgs", cfg.tm, True), player)
             CURRENT_ACTION_ANIM = None
 
     verb_menu.clear_selection()
@@ -1029,7 +873,6 @@ def change_state_object(object_name, frame_idx, texto_feedback=None):
     elif not found:
         print(f"[ERROR] No se encontró el objeto animado: {object_name}")
 
-actionsManager.change_state_object=change_state_object
 
 
 def crafting(id_item1, id_item2, id_nuevo_item, new_graph_object, flag_a_activar):
@@ -1145,7 +988,6 @@ def change_player_active(nuevo_id):
     global CURRENT_ACTION_ANIM
     CURRENT_ACTION_ANIM = None
 
-actionsManager.change_player_active=change_player_active
 
 # ==========================================
 #  FUNCIONES AUXILIARES DE WINDOWS
@@ -1196,11 +1038,7 @@ else:
 
     CURRENT_STATE = GameState.TITLE
 
-actionsManager.play_scene_music=play_scene_music
-actionsManager.stop_scene_music=stop_scene_music
-actionsManager.execute_hotspot_action=execute_hotspot_action
-actionsManager.play_object_animation=play_object_animation
-actionsManager.load_and_open_map=load_and_open_map
+
 
 # ==========================================
 #  BUCLE PRINCIPAL
@@ -1335,7 +1173,6 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
 
 
 # --- ¡IMPORTANTE! CONECTAR LA FUNCIÓN AL MENÚ ---
-system_menu.set_callback(logic_system_menu_action)
 
 
 def handle_input_explore(event):
@@ -2024,19 +1861,207 @@ def logic_close_menu():
         # Opcional: Aseguramos que la música del título suene si se paró
         # play_scene_music("sintonia_titulo.ogg")
 
+running=True
 
-def mainloop():
-    global SCREEN_OVERLAY_TEXT, CURRENT_STATE, GameState, GAME_STATE, CURRENT_ACTION_ANIM, TEXT_DISPLAY_TIMER, CURRENT_SPEAKER_REF, INFO_TEXT_TIMER
-    # --- ¡IMPORTANTE! INYECTAMOS LAS FUNCIONES ---
+def init_managers():
+    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, intro_manager, ending_manager, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
+
+    cfg.tm = TranslationManager(cfg.DEFAULT_LANG_FILE)
+
+    # --- MODIFICACIÓN DEL INICIO  TEXTOS DINÁMICOS---
+    reload_game_texts(cfg.DEFAULT_LANG_FILE)
+
+    # Variables Globales de UI y Sistema
+    TEXT_DISPLAY_TIMER = 0
+    INFO_TEXT_TIMER = 0
+    SCREEN_OVERLAY_TEXT = ""
+    CURRENT_CURSOR_STATE = cfg.UI_CONFIG["DEFAULT_CURSOR_STATE"]
+    CURRENT_ACTION_ANIM = None
+    MUSIC_STOP_TIME = 0.0
+    LAST_EXIT_CLICK_TIME = 0  # --- NUEVO: Variable para el doble clic ---
+    DOUBLE_CLICK_THRESHOLD = cfg.UI_CONFIG["DOUBLE_CLICK_THRESHOLD"]  # Milisegundos para considerar doble clic
+
+    # ==========================================
+    #  GESTOR DE RECURSOS PRE-CACHE
+    # ==========================================
+    # enviado a otro fichero
+    # Variable para saber QUIÉN está hablando (objeto o None para narrador)
+    CURRENT_SPEAKER_REF = None
+    CURRENT_TEXT_POS = None
+
+    # ==========================================
+    #  cfg.CONFIGURACIÓN DE DIÁLOGOS
+    # ==========================================
+    DIALOGUE_STYLE = cfg.UI_CONFIG["DIALOGUE_STYLE"]
+
+    movement = Movement()
+    textbox = TextBox()
+    verb_menu = VerbMenu()
+    inventory = Inventory()
+    cutscene_manager = CutsceneManager()
+
+    scene_manager = SceneManager()
+
+    # INYECTAMOS LAS DEPENDENCIAS
+    cutscene_manager.set_dependencies(
+        smart_move_func=smart_move_to,  # Función de movimiento inteligente
+        say_func=cutscene_say_wrapper,  # Función para hablar
+        face_func=cutscene_face_wrapper,  # Función para mirar a cámara
+        set_anim_func=cutscene_anim_wrapper,  # Función para forzar animación
+        check_text_timer=cutscene_text_check  # Función para chequear tiempo texto
+    )
+
+    actionsManager = ActionsManager()
+    actionsManager.smart_move_to = smart_move_to
+    actionsManager.text_event = text_event
+    actionsManager.sound_event = sound_event
+    actionsManager.delitem_event = delitem_event
+    actionsManager.anim_event = anim_event
+    actionsManager.flag_event = flag_event
+    actionsManager.change_state_object=change_state_object
+    actionsManager.change_player_active = change_player_active
+    actionsManager.play_scene_music = play_scene_music
+    actionsManager.stop_scene_music = stop_scene_music
+    actionsManager.execute_hotspot_action = execute_hotspot_action
+    actionsManager.play_object_animation = play_object_animation
+    actionsManager.load_and_open_map = load_and_open_map
+
+
+
+    title_menu = TitleMenu()
+    dialogue_system = DialogueSystem()
+    save_load_ui = SaveLoadUI()
+    language_ui = LanguageUI()
+
+    # AHORA EL PLAYER SE CARGA USANDO EL ID DE LA cfg.CONFIGURACIÓN
+    player = AnimatedCharacter(
+        400, 300,
+        char_id=cfg.PLAYER_CONFIG["CHAR_ID"],
+        text_color=cfg.PLAYER_CONFIG["TEXT_COLOR"]
+    )
+
+    scene_manager.set_ui_callback(reset_game_ui_state)  # Le pasamos la función de limpieza al SceneManager
+    scene_manager.set_player(player)  # CONEXIÓN JUGADOR (Recuerda lo que mencioné en el reporte):
+    # intro está en otro file
+    intro_manager = IntroManager(
+        set_state_callback=set_state,  # Función para cambiar estado
+        play_music_callback=play_scene_music,  # Función para tocar música
+        scene_manager_ref=scene_manager,  # Objeto scene_manager
+        get_texts_callback=lambda: cfg.tm.variables["cine"]  # Lambda para obtener textos actuales
+    )
+    # ending está en otro file
+    ending_manager = EndingManager(
+        set_state_callback=set_state,  # Para volver al Título al acabar
+        play_music_callback=play_scene_music,  # Para poner la música de créditos
+        get_texts_callback=lambda: cfg.tm.variables["cine"]
+    )
+    # Inicializamos el sistema de mapas
+    map_system = MapSystem("mapa1.jpg", scene_manager)
+
+    # Estados del juego
+    # CURRENT_STATE = GameState.EXPLORE       #para arrancar en el juego
+    CURRENT_STATE = GameState.TITLE  # para arrancar en el titulo
+
+def init():
+    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, intro_manager, ending_manager, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
+
+    print("[ENGINE] Engine is booting...")
+
+
+    # ==========================================
+    #  INICIALIZACIÓN Y SONIDOS
+    # ==========================================
+    pygame.init()
+    # 1. La Ventana Real (El marco de Windows) -> Usa WINDOW_WIDTH / HEIGHT
+    # muy borroso pero rapido con : window_flags = pygame.RESIZABLE | pygame.SCALED
+    window_flags = pygame.RESIZABLE
+    real_window = pygame.display.set_mode((cfg.CONFIG["WINDOW_WIDTH"], cfg.CONFIG["WINDOW_HEIGHT"]), window_flags)
+    pygame.display.set_caption(cfg.CONFIG["WINDOW_TITLE"])
+
+    # =====================================================
+    #  PANTALLA DE CARGA
+    # =====================================================
+    # Creamos una fuente temporal básica del sistema
+    loading_font = pygame.font.SysFont(None, 20)
+    loading_text = loading_font.render("Loading ...", True, (255, 255, 255))  # White
+    powered_by_text = loading_font.render("Powered by NG-PCE", True, (200, 200, 200))  # Light grey
+    real_window.fill((0, 0, 0))  # Limpiamos en negro
+    text_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - loading_text.get_width() // 2
+    text_y = cfg.CONFIG["WINDOW_HEIGHT"] // 2
+    powered_by_x = cfg.CONFIG["WINDOW_WIDTH"] // 2 - powered_by_text.get_width() // 2
+    powered_by_y = cfg.CONFIG["WINDOW_HEIGHT"] * 0.75
+    real_window.blit(loading_text, (text_x, text_y))
+    real_window.blit(powered_by_text, (powered_by_x, powered_by_y))
+
+    # ¡IMPORTANTE! Forzamos la actualización de la pantalla AHORA MISMO
+    pygame.display.flip()
+    # 2. El Lienzo Virtual (Tu juego interno) -> Usa GAME_WIDTH / HEIGHT
+    # AQUÍ ESTABA EL ERROR ANTES, ahora ya existe la clave correcta.
+    screen = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]))
+    clock = pygame.time.Clock()
+    # Variables para gestionar el escalado del ratón
+    scale_factor = 1.0
+    offset_x = 0
+    offset_y = 0
+
+    # --- GESTOR DE SONIDOS GLOBAL ---
+    if cfg.CONFIG["ENABLE_SOUND"]:
+        try:
+            if not pygame.mixer.get_init(): pygame.mixer.init()
+            # --- SONIDOS DE PASOS ---
+
+            for key, filename in cfg.STEP_TYPES.items():
+                path = os.path.join(cfg.SND_DIR, filename)
+                if os.path.exists(path):
+                    s = pygame.mixer.Sound(path)
+                    s.set_volume(0.4)  # Volumen de pasos
+                    cfg.SOUNDS[key] = s  # AHORA ESTO FUNCIONARÁ PORQUE cfg.SOUNDS YA EXISTE
+                else:
+                    # Fallback: Si falta uno específico, usamos el default si existe
+                    if key != "step" and "step" in cfg.SOUNDS:
+                        cfg.SOUNDS[key] = cfg.SOUNDS["step"]
+                    else:
+                        print(f"[WARNING] Missing sound: {filename}")
+
+            # --- OTROS SONIDOS ---
+            medal_path = os.path.join(cfg.SND_DIR, "medal.ogg")
+            if os.path.exists(medal_path):
+                cfg.SOUNDS["medal"] = pygame.mixer.Sound(medal_path)
+                cfg.SOUNDS["medal"].set_volume(0.5)
+
+            # Añade aquí el resto de sonidos puntuales (church-bell, etc)...
+
+        except Exception as e:
+            print(f"[ERROR] Loading sounds: {e}")
+
+    debug_console = DebugConsole()
+    credits_window = CreditsWindow()
+
+    init_managers()
+
+
+    # ¡¡¡LÍNEA NUEVA OBLIGATORIA!!!
+    # Registramos al jugador en el manager para siempre
+
+    pygame.mouse.set_visible(False)
+
+    CURSOR_IMGS = {}
+    init_cursor()
+
     save_load_ui.set_callbacks(logic_save_game, logic_load_game, logic_close_menu)
 
-    # ==========================================
-    #  BUCLE PRINCIPAL (CORREGIDO PARA TURNOS Y RENDERIZADO)
-    # ==========================================
+    system_menu = SystemMenu()
+    system_menu.set_callback(logic_system_menu_action)
+
+
+def mainloop():
+    global SCREEN_OVERLAY_TEXT, CURRENT_STATE, GameState, GAME_STATE, CURRENT_ACTION_ANIM, TEXT_DISPLAY_TIMER, CURRENT_SPEAKER_REF, INFO_TEXT_TIMER, CURSOR_IMGS, running
     running = True
 
     # --- LLAMADA INICIAL PARA QUE EL RATÓN FUNCIONE EN EL FRAME 1 ---
     calculate_scale_metrics()
+
+    print("[ENGINE] Starting main loop")
 
     while running:
         dt = clock.tick(60) / 1000.0
@@ -2471,6 +2496,7 @@ def load_scripts(directory):
         "dialogue_system": dialogue_system,
         "map_system": map_system
     }
+
 
 
 

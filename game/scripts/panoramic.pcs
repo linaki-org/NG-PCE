@@ -27,11 +27,9 @@ trashcan is hotspot of panoramic:
     @open:
         trashcan.state: 1
         say TRASH_OPEN
-        anim open
     @close:
         trashcan.state: 0
         say TRASH_CLOSE
-        anim close
     @use:
         say "Wow ! You triggered a secret animation !"
         say "Day of the Tentacle is a game created in 1995 by LucasArt games"

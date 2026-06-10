@@ -77,7 +77,7 @@ class IntroManager:
 
         if "music" in data:
             loops_config = data.get("music_loops", None)
-            self.play_music(data["music"], volume=0.6, loops=loops_config)
+            self.play_music(data["music"], volume=0.1, loops=loops_config)
 
         path = os.path.join(cfg.BG_DIR, data["image"])
         try:

@@ -17,6 +17,7 @@ ITEMS_DIR="./assets/items"
 BG_DIR="./assets/bg"
 HTSPT_DIR="./assets/htspt"
 OBJ_DIR="./assets/obj"
+VOICE_DIR="./voice/en"
 
 config_filename=os.path.join(GAME_DIR, "game.cfg")
 if not os.path.exists(config_filename):
