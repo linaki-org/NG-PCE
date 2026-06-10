@@ -1,4 +1,5 @@
 import typer
+from .tools.game_init import init_game
 
 app=typer.Typer()
 
@@ -8,7 +9,7 @@ def run():
     """Run the game present in the working directory"""
     print("Trying to run game from working directory...")
     import ng_pce.engine as engine
-    engine.load_scripts("game/scripts")
+    engine.load_scripts("scripts")
     engine.mainloop()
 
 @app.command()
@@ -22,9 +23,9 @@ def build(config: str = None):
     print("Build feature has not yet been implemented")
 
 @app.command()
-def init():
+def init(directory: str):
     """Init a game directory with all the necessary files and folders"""
-    print("Init feature has not yet been implemented")
+    init_game(directory)
 
 if __name__ == "__main__":
     app()

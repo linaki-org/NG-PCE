@@ -1,5 +1,5 @@
 import os
-import json
+import yaml
 from gettext import translation
 
 # Los definimos aquí vacíos para poder importarlos desde classes.py y main.py
@@ -7,37 +7,60 @@ from gettext import translation
 SOUNDS = {}
 
 
-GAME_DIR="game"
-ASSETS_DIR="game/assets"
-SND_DIR="game/snd"
-LANG_DIR="game/languages"
-CURSOR_DIR="game/cursor"
-SAVE_DIR="game/saves"
-ITEMS_DIR="game/assets/items"
-BG_DIR="game/assets/backgrounds"
-HTSPT_DIR="game/assets/hotspots"
-OBJ_DIR="game/assets/objects"
+GAME_DIR="."
+ASSETS_DIR="./assets"
+SND_DIR="./snd"
+LANG_DIR="./lang"
+CURSOR_DIR="./cursor"
+SAVE_DIR="./save"
+ITEMS_DIR="./assets/items"
+BG_DIR="./assets/bg"
+HTSPT_DIR="./assets/htspt"
+OBJ_DIR="./assets/obj"
 
+config_filename=os.path.join(GAME_DIR, "game.cfg")
+if not os.path.exists(config_filename):
+    raise FileNotFoundError("Cannot find game.cfg file in the game directory")
 
-with open(os.path.join(GAME_DIR, "game_config.json")) as config_file:
-    CONFIG = json.load(config_file)
+with open(config_filename) as config_file:
+    CONFIG = yaml.safe_load(config_file)
 
 DEFAULT_LANG_FILE=CONFIG["DEFAULT_LANGUAGE"]+".yaml"
 
-with open(os.path.join(GAME_DIR, "char_config.json")) as char_config_file:
-    char_config=json.load(char_config_file)
+
+char_config_filename=os.path.join(GAME_DIR, "chars.cfg")
+if not os.path.exists(char_config_filename):
+    raise FileNotFoundError("Cannot find chars.cfg file in the game directory")
+
+with open(char_config_filename) as char_config_file:
+    char_config=yaml.safe_load(char_config_file)
     PLAYER_CONFIG=char_config["PLAYER"]
     CHAR_DEFS=char_config["CHARACTERS"]
 
-with open(os.path.join(GAME_DIR, "ui_config.json")) as ui_config_file:
-    UI_CONFIG=json.load(ui_config_file)
 
-with open(os.path.join(GAME_DIR, "game_state.json")) as gstate_config_file:
-    GAME_STATE=json.load(gstate_config_file)
+ui_config_filename=os.path.join(GAME_DIR, "ui.cfg")
+if not os.path.exists(ui_config_filename):
+    raise FileNotFoundError("Cannot find ui.cfg file in the game directory")
+
+with open(ui_config_filename) as ui_config_file:
+    UI_CONFIG=yaml.safe_load(ui_config_file)
 
 
-with open(os.path.join(GAME_DIR, "game_credits.txt")) as credits_file:
-    CREDITS_TEXT = credits_file.read()
+gstate_config_filename=os.path.join(GAME_DIR, "gstate.cfg")
+if not os.path.exists(gstate_config_filename):
+    raise FileNotFoundError("Cannot find gstate.cfg file in the game directory")
+
+with open(gstate_config_filename) as gstate_config_file:
+    GAME_STATE=yaml.safe_load(gstate_config_file)
+
+
+credits_filename=os.path.join(GAME_DIR, "credits.txt")
+if not os.path.exists(credits_filename):
+    print("Game credits file not found, defaulting to engine credits")
+    CREDITS_TEXT="NG-PCE Engine by @Linaki.0rg & Contributors"
+else:
+    with open(credits_filename) as credits_file:
+        CREDITS_TEXT = credits_file.read()
 
 
 TEXT_CONFIG = UI_CONFIG["TEXT_STYLE"]

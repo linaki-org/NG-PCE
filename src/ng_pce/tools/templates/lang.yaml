@@ -1,0 +1,120 @@
+# ====================================================================================
+#  TRANSLATION: ENGLISH (en.yaml)
+# ====================================================================================
+
+language_name: "English"
+
+# ====================================================================================
+#  VERB SYSTEM - VERB BOX
+# ====================================================================================
+verbs:
+  WALK: "GO"             # <--- KEY IN UPPERCASE
+  OPEN: "OPEN"
+  CLOSE: "CLOSE"
+  PUSH: "PUSH"
+  PULL: "PULL"
+  PICK UP: "PICK UP"
+  USE: "USE"
+  TALK TO: "TALK TO"     # <--- KEY IN UPPERCASE
+  GIVE: "GIVE"
+  LOOK AT: "LOOK AT"
+  WITH: "with"
+
+# ====================================================================================
+#  MAIN MENU - ACTIVE WITH F2
+# ====================================================================================
+menus:
+  FILE_TITLE: "FILE"
+  SAVE_CMD: "SAVE"
+  LOAD_CMD: "LOAD"
+  HELP_TITLE: "HELP"
+  NO_OPT: "NO"
+  GAME_HELP_OPT: "GAME HELP"
+  DEBUG_OPT: "DEBUG MODE"
+  SOUND_TITLE: "SOUND"
+  YES_OPT: "YES"
+  CURSOR_TITLE: "CURSOR"
+  CURSOR_CLASSIC: "CLASSIC"
+  CURSOR_MODERN: "MODERN"
+  TEXT_TITLE: "TEXT"
+  VEL_LABEL: "SPEED >"
+  SIZE_LABEL: "SIZE >"
+  # Simple lists
+  VEL_OPTS: ["SLOW", "MEDIUM", "FAST"]
+  SIZE_OPTS: ["SMALL", "MEDIUM", "LARGE"]
+  LANG_TITLE: "LANGUAGE"
+  CLOSE_CMD: "CLOSE"
+
+# ====================================================================================
+#  TITLES - START SCREEN
+# ====================================================================================
+titles:
+  NEW_GAME: "NEW GAME"
+  LOAD_GAME: "LOAD GAME"
+  LANGUAGE: "LANGUAGE"
+  CREDITS: "CREDITS"
+  EXIT: "EXIT"
+
+# ====================================================================================
+#  SYSTEM MESSAGES
+# ====================================================================================
+system_messages:
+  CANNOT_DO: "I can't do that."
+  CANNOT_REACH: "I can't reach that."
+  DOES_NOT_WORK: "That doesn't work."
+  MAKES_NO_SENSE: "That doesn't make sense."
+  DEFAULT_LOOK: "It is "
+  PICKED_UP: "Picked up "
+  SENTENCE_TO: " to "                                   # Leave empty for Spanish (Go + destination)
+  SENTENCE_WITH: " with "
+  PREP_WITH: " with..."
+  VERB_WALK: "GO"                                      # We can use "GO" and append "to" as needed
+  SAVE_SUCCESS: "Game saved successfully."
+  SAVE_ERROR: "Error saving file."
+  LOAD_SUCCESS: "Game loaded."
+  LOAD_CORRUPT: "Corrupt file."
+  MSG_SPEED: "Speed: "
+  MSG_SIZE: "Size: "
+  CRAFTING_DONE: "I combined {0} with {1}."
+  CHAR_SWAP: "Now controlling {0}!"
+  CREDITS_TITLE: "CREDITS"
+  DEBUG_TITLE: "DEBUG CONSOLE (Drag me)"
+
+  # classic-style save slots
+  SLOT_EMPTY: "--- Empty ---"         # EN: "--- Empty ---"
+  SLOT_UNKNOWN: "Unknown"             # EN: "Unknown"
+  SLOT_CORRUPT: "Corrupt File"        # EN: "Corrupt File"
+  MSG_NO_SAVE: "No save game here."   # EN: "No save game here."
+  BTN_CANCEL: "CANCEL"                # EN: "CANCEL"
+
+# ====================================================================================
+#  SCENE NAMES (For debug, saves and map)
+# ====================================================================================
+scenes:
+  MY_SCENE : "My Scene"
+
+# ====================================================================================
+#  HOTSPOTS - ITEM NAMES (Labels that appear on mouseover)
+# ====================================================================================
+items:
+  MY_OBJECT: "My Object"
+
+  PLAYER_NAME:   "Guybrush"
+
+# ====================================================================================
+#  SCENES: DESCRIPTIONS AND REACTIONS (Look At, Pick Up, Push...)
+# ====================================================================================
+descriptions:
+  MY_MESSAGE: "Insert a description to use in a script"
+
+# ====================================================================================
+#  CINEMATICS (Intro and Ending)
+# ====================================================================================
+cinematics:
+  MY_MESSAGE: "Insert a message to use in a cinematic"
+
+# ====================================================================================
+#  DIALOGUES
+# ====================================================================================
+dialogues:
+  MY_QUESTION: "Insert a question/answer to use in a dialogue"
