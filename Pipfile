@@ -8,6 +8,8 @@ pygame = "*"
 lark = "*"
 pyyaml = "*"
 typer = "*"
+tk = "*"
+pillow = "*"
 
 [dev-packages]
 

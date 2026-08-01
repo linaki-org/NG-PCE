@@ -29,28 +29,7 @@ class EndingManager:
     def start_ending(self):
         cine_texts = self.get_texts()
 
-        self.playlist = [
-            {
-                "image": "darkness-room.jpg",
-                "text": cine_texts["ENDING_1"],
-                "effect": "none",
-                "music": "sintonia1.ogg"
-            },
-            {
-                "image": "avda_paz.jpg",
-                "text": cine_texts["ENDING_2"],
-                "effect": "zoom_out",
-                "zoom_intensity": 0.2
-            },
-            {
-                "image": "logo_pycapge.png",
-                "text": cine_texts["THANKS"],
-                "effect": "zoom_out",
-                "zoom_intensity": 0.5,
-                "duration": 6.0,
-                "wait_for_input": True
-            }
-        ]
+
 
         self.current_index = 0
         self.active = True

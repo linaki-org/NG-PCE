@@ -1,4 +1,5 @@
-"""A little tool to init a game directory by creating necessary files and folders"""
+"""A little tool to init a game directory by creating necessary files and folders.
+It also includes functions to create rooms in the game"""
 
 import os
 from importlib.resources import files as res_files
@@ -17,6 +18,14 @@ def write_cfg(root_dir, cfg_file, cfg_resource):
     cfg_resource=res_files("ng_pce.tools.templates") / cfg_resource
     with open(filepath, "w") as f:
         f.write(cfg_resource.read_text())
+
+def write_template(root_dir, out_file, template_resource, format_args):
+    filepath=os.path.join(root_dir, out_file)
+    if os.path.exists(filepath):
+        raise FileExistsError(f"Cannot init {filepath}, file already exists")
+    template_res=res_files("ng_pce.tools.templates") / template_resource
+    with open(filepath, "w") as f:
+        f.write(template_res.read_text().format(**format_args))
 
 def write_bytes(root_dir, cfg_file, cfg_resource):
     filepath=os.path.join(root_dir, cfg_file)
@@ -49,5 +58,7 @@ def init_game(directory: str):
     write_cfg(directory, "lang/en.yaml", "lang.yaml")
     write_bytes(directory, "arial.ttf", "arial.ttf")
 
-
-
+def new_room(room_id: str):
+    print(f"Making a room in {room_id}.pcs")
+    write_template("scripts", f"{room_id}.pcs", "room.pcs", {"room_id" : room_id})
+    print(f"Room {room_id} has successfully been inited in scripts/")

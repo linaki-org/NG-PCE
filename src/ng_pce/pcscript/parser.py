@@ -99,13 +99,26 @@ class PCTransformer(Transformer):
         return Event(trigger=items[0], body=items[1])
 
     def value(self, items):
-        s = str(items[0])
-        if s in ("true", "false"):              return s == "true"
-        if s.startswith('"') and s.endswith('"'): return s[1:-1]
-        try:    return int(s)
-        except ValueError: pass
-        try:    return float(s)
-        except ValueError: pass
+        if len(items) == 2:
+            first = self._coerce_value(items[0])
+            second = self._coerce_value(items[1])
+            return TupleValue(first=first, second=second)
+        return self._coerce_value(items[0])
+
+    def _coerce_value(self, item):
+        s = str(item)
+        if s in ("true", "false"):
+            return s == "true"
+        if s.startswith('"') and s.endswith('"'):
+            return s[1:-1]
+        try:
+            return int(s)
+        except ValueError:
+            pass
+        try:
+            return float(s)
+        except ValueError:
+            pass
         return DynamicValue(s)
 
 

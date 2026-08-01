@@ -58,3 +58,24 @@ class Ambient:
 @dataclass
 class DynamicValue:
     value: str
+
+
+@dataclass
+class TupleValue:
+    first: Any
+    second: Any
+
+    def __iter__(self):
+        yield self.first
+        yield self.second
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, index):
+        return (self.first, self.second)[index]
+
+    def __eq__(self, other):
+        if isinstance(other, tuple):
+            return (self.first, self.second) == other
+        return super().__eq__(other)

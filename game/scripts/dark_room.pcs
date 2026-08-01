@@ -1,0 +1,25 @@
+dark_room is scene:
+    name: DARK_ROOM
+    scale: 1.75, 2.2
+    y_range: 325, 400
+    transition: fade
+
+old_map is hotspot of dark_room:
+    label: MAP
+    coords: 250, 400
+    scale: 0.1
+    flag: tengo_mapa
+    verb: PICKUP
+    solid: true
+    @lookat: say MAP_LOOK
+    @pickup: say MAP_PICK
+    @use: run open_map
+    @open: run open_map
+
+dr_e1 is exit of dark_room:
+    x: 0
+    y: 0
+    w: 50
+    h: GAME_AREA_HEIGHT
+    target: town_hall
+    spawn: 750, 400

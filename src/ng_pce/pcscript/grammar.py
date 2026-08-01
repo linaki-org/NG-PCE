@@ -34,11 +34,13 @@ pcs_grammar = r"""
 
     cmd_block: (_NEWLINE _INDENT)? cmd_statement+ (_DEDENT | _NEWLINE)
 
-    cmd_statement: state_assign _NEWLINE?
-                 | action _NEWLINE?
+    cmd_statement: state_assign (_NEWLINE)?
+                 | action (_NEWLINE)?
 
     state_assign: NAME "." NAME ":" value
-    action: NAME value
+    action: NAME value (arg_def+)?
+    
+    arg_def: NAME value
     
     dialogue_block: _NEWLINE _INDENT branch_def+ _DEDENT
     branch_def: NAME ":" branch_block
@@ -46,7 +48,7 @@ pcs_grammar = r"""
     option_def: "-" option_block
     option_block: (prop_assign _NEWLINE?)+
 
-    value: STRING | NUMBER | BOOL | NAME
+    value: STRING | NUMBER | BOOL | NAME | NUMBER "," NUMBER
 
     BOOL.2: "true" | "false"
 

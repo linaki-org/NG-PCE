@@ -1,0 +1,19 @@
+intro_cutscene is script:
+    bg peace_avenue
+    subtext INTRO_1
+
+    waitclick null
+
+    bg town_hall
+    subtext INTRO_2
+
+    waitclick null
+
+    bg darkness_room
+    subtext INTRO_3
+
+    waitclick null
+
+    play "sintonia3.ogg"
+    bg logo_pycapge with zoomout at 1 for 10
+

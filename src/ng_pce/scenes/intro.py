@@ -33,32 +33,6 @@ class IntroManager:
     def start_intro(self):
         cine_texts = self.get_texts()
 
-        self.playlist = [
-            {
-                "image": "avda_paz.jpg",
-                "text": cine_texts["INTRO_1"],
-                "effect": "none"
-            },
-            {
-                "image": "ayun.jpg",
-                "text": cine_texts["INTRO_2"],
-                "effect": "none"
-            },
-            {
-                "image": "darkness-room.jpg",
-                "text": cine_texts["INTRO_3"],
-                "effect": "none"
-            },
-            {
-                "image": "logo_pycapge.png",
-                "text": "",
-                "music": "sintonia3.ogg",
-                "music_loops": 0,
-                "effect": "zoom_out",
-                "duration": 10.0,
-                "zoom_intensity": 1.0,
-            }
-        ]
 
         self.current_index = 0
         self.active = True

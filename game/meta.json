@@ -1,0 +1,4 @@
+{"rooms" :  {"dark_room" : ["old_map", "dr_ex1"],
+              "peace_avenue" : ["bell", "hammer", "pa_ex1", "pa_ex2"],
+              "town_hall" :  ["window", "lantern", "strange_machine", "ambient_machine", "ambient_fire", "th_ex1", "th_ex2"],
+              "panoramic" :  ["trashcan", "garba", "flashlight_empty", "flashlight_with_bat", "batteries", "crow", "pn_e1"]}

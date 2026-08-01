@@ -1,7 +1,8 @@
 import typer
-from .tools.game_init import init_game
+from .tools.game_init import init_game, new_room
 from .tools.voiceify import voiceify_patch
 from .tools.reloader import start_reloader
+#from .tools.fluf import open_room_editor
 
 app=typer.Typer()
 
@@ -11,6 +12,7 @@ def run():
     """Run the game present in the working directory"""
     print("Trying to run game from working directory...")
     import ng_pce.engine as engine
+    engine.init()
     engine.load_scripts("scripts")
     engine.mainloop()
 
@@ -43,6 +45,23 @@ def init(directory: str):
 def voiceify(language: str):
     """Generate voices from a language patch using ElevenLabs TTS API"""
     voiceify_patch(language)
+
+@app.command()
+def fluf(fluf_type: str):
+    """Open the FLUF editor for the specified entity"""
+    if fluf_type not in ["room", "cost"]:
+        print("Unknown FLUF type. FLUF type must be one of: room; cost")
+    if fluf_type=="room":
+        #open_room_editor()
+        print("FLUF is unavailable in the current version of NG-PCE. Please upgrade to use it.")
+
+@app.command()
+def new(entity: str, entity_id: str):
+    """Create a new entity of the desired type with the desired ID"""
+    if entity not in ["room"]:
+        print("Unknown entity type. Entity must be one of: room")
+    if entity=="room":
+        new_room(entity_id)
 
 if __name__ == "__main__":
     app()

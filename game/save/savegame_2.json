@@ -1,0 +1,23 @@
+{
+    "version": 1.1,
+    "timestamp": "2026-05-31 18:32",
+    "game_state": {
+        "campana_recogida": false,
+        "martillo_recogido": false,
+        "farol_recogido": false,
+        "pilas_linterna_recogidas": false,
+        "linterna_sin_pilas_recogida": false,
+        "linterna_con_pilas_recogida": false,
+        "intro_ayuntamiento_vista": false,
+        "pala_recogida": false,
+        "controlando_gilo": true,
+        "controlando_bart": false
+    },
+    "scene": "town_hall",
+    "position": [
+        781,
+        359
+    ],
+    "inventory": [],
+    "char_id": "Gilo"
+}

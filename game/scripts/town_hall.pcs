@@ -1,23 +1,16 @@
 town_hall is scene:
     name: TOWN_HALL
-    bg_img: "ayun.jpg"
-    walk_img: "ayun_bm.jpg"
-    scale_min: 0.1
-    scale_max: 1.8
-    y_min: 230
-    y_max: 400
+    scale: 0.1, 1.8
+    y_range: 230, 400
     transition: slide_left
     step_snd: "step_wood"
-    lightmap: "ayun_light.jpg"
 
 window is hotspot of town_hall:
     label: WINDOW_OLD
-    x: 60
-    y: 90
+    coords: 60, 90
     width: 100
     height: 100
-    walk_x: 110
-    walk_y: 380
+    walk_to: 110, 380
     verb: LOOKAT
     @lookat: say WINDOW_LOOK
     @open: say WINDOW_OPEN
@@ -25,9 +18,7 @@ window is hotspot of town_hall:
 
 lantern is hotspot of town_hall:
     label: LANTERN_OLD
-    img: "farol.png"
-    x: 600
-    y: 420
+    coords: 600, 420
     scale: 0.1
     flag: farol_recogido
     verb: PICKUP
@@ -37,8 +28,7 @@ lantern is hotspot of town_hall:
 strange_machine is hotspot of town_hall:
     label: MACHINE_STRANGE
     img: "animation_demo.png"
-    x: 280
-    y: 420
+    coords: 280, 420
     scale: 0.65
     frames: 5
     speed: 200
@@ -54,19 +44,16 @@ strange_machine is hotspot of town_hall:
 
 ambient_machine is ambient of town_hall:
     img: "animation_demo.png"
-    x: 520
+    x: 530
     y: 420
     frames: 5
     speed: 100
     scale: 0.4
     layer: BACK
     solid: true
-    moveto_x: 0
-    moveto_y: 0
     loop: true
 
 ambient_fire is ambient of town_hall:
-    img: "hoguera.gif"
     x: 675
     y: 420
     label: BONFIRE
@@ -81,8 +68,7 @@ th_ex1 is exit of town_hall:
     w: 50
     h: GAME_AREA_HEIGHT
     target: peace_avenue
-    spawn_x: 750
-    spawn_y: 400
+    spawn: 750, 400
 
 th_ex2 is exit of town_hall:
     x: 750
@@ -90,5 +76,4 @@ th_ex2 is exit of town_hall:
     w: 50
     h: GAME_AREA_HEIGHT
     target: dark_room
-    spawn_x: 50
-    spawn_y: 400
+    spawn: 50, 400

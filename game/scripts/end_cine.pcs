@@ -1,0 +1,18 @@
+start_cutscene is script:
+    play "sintonia1.ogg"
+    bg darkness_room
+    subtext ENDING_1
+
+    waitclick null
+
+    bg peace_avenue with zoomout at 0.2
+    subtext ENDING_2
+
+    waitclick null
+
+    bg logo_pycapge with zoomout at 0.5 for 6
+    subtext THANKS
+
+    waitclick null
+
+    goroom menu

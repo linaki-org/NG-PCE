@@ -1,27 +1,20 @@
 panoramic is scene:
-    bg_img: "panoramica.jpg"
     name: PANORAMIC
-    walk_img: "panoramica_bm.jpg"
-    scale_min: 1.9
-    scale_max: 2.1
-    y_min: 325
-    y_max: 400
+    scale: 1.9, 2.1
+    y_range: 325, 400
 
     @enter:
         say SCENE3_INTRO_MSG
 
 trashcan is hotspot of panoramic:
-    img: "trashcan.png"
     frames: 2
     speed: 0
-    x: 800
-    y: 355
+    coords: 800, 355
     label: TRASHCAN
     verb: LOOKAT
     scale: 0.15
     solid: true
-    walk_x: 875
-    walk_y: 365
+    walk_to: 875, 365
     facing: LEFT
     @lookat: say TRASH_LOOK
     @open:
@@ -38,12 +31,10 @@ garba is hotspot of panoramic:
     img: "garba_tr.gif"
     frames: 6
     speed: 300
-    x: 1250
-    y: 360
+    coords: 1250, 350
     scale: 0.65
     label: NPC_GARBA
-    walk_x: 1365
-    walk_y: 360
+    walk_to: 1365, 360
     facing: LEFT
     solid: true
 
@@ -61,9 +52,7 @@ craft_flashlight is script:
     flag linterna_con_pilas_recogida
 
 flashlight_empty is hotspot of panoramic:
-    img: "linterna_sin_pilas.png"
-    x: 950
-    y: 370
+    coords: 950, 370
     scale: 0.085
     label: FLASHLIGHT_EMPTY
     flag: linterna_sin_pilas_recogida
@@ -74,9 +63,7 @@ flashlight_empty is hotspot of panoramic:
         run craft_flashlight
 
 batteries is hotspot of panoramic:
-    img: "pilas_linterna.png"
-    x: 1050
-    y: 370
+    coords: 1050, 370
     scale: 0.08
     label: BATTERIES
     flag: pilas_linterna_recogidas
@@ -87,12 +74,33 @@ batteries is hotspot of panoramic:
         run craft_flashlight
 
 flashlight_with_bat is hotspot of panoramic:
-    img: "linterna_con_pilas.png"
-    x: 1000
-    y: 3000
+    coords: 1000, 3000
     label: FLASHLIGHT_FULL
     verb: USE
     @lookat: say FLASHLIGHT_FULL_LOOK
     @use: say FLASHLIGHT_FULL_USE
     @open: say FLASHLIGHT_FULL_OPEN
 
+crow is ambient of panoramic:
+    frames: 8
+    speed: 120
+    x: 50
+    y: 100
+    scale: 0.3
+    layer: BACK
+    solid: false
+    moveto_x: 1600
+    moveto_y: 150
+    walk_x: 1500
+    walk_y: 380
+    move_speed: 100
+    loop: true
+    label: BIRD
+
+pn_e1 is exit of panoramic:
+    x: 1550
+    y: 0
+    w: 50
+    h: GAME_AREA_HEIGHT
+    target: peace_avenue
+    spawn: 50, 400
