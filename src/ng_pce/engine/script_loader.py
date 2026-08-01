@@ -165,23 +165,30 @@ def generate_actions(actions_defs):
 
 
 def load_scene(scene, scene_manager):
+    print("Loading scene {scene.name} :", scene.properties)
     props=scene.properties
-    required_properties=["name", "bg_img"]
-    all_properties=["name", "bg_img", "walk_img", "scale_min", "scale_max",
-                    "y_min", "y_max", "transition", "step_snd", "lightmap", "is_dark"]
+    required_properties=["name"]
+    all_properties=["name", "bg_img", "walk_img", "scale",
+                    "y_range", "transition", "step_snd", "lightmap", "is_dark"]
     check_properties(props, required_properties, all_properties, scene.name)
 
     #Generate args dict for scene definition
     args={}
     args["scene_id"] = scene.name
-    args["background_image_path"] = props["bg_img"]
+    if "bg_img" in props:
+        args["background_image_path"] = props["bg_img"]
+    else:
+        args["background_image_path"] = scene.name + ".png"
     args["name"] = String(props["name"], "scenes", cfg.tm)
     if "walk_img" in props:
         args["walkable_mask_file"] = props["walk_img"]
-    if "scale_min" in props and "scale_max" in props:
-        args["scale_range"] = (props["scale_min"], props["scale_max"])
-    if "y_min" in props and "y_max" in props:
-        args["y_range"] = (props["y_min"], props["y_max"])
+    else:
+        args["walkable_mask_file"] = scene.name + "_wm.png"
+    if "scale" in props:
+        args["scale_range"] = props["scale"]
+        print(props["scale"])
+    if "y_range" in props:
+        args["y_range"] = props["y_range"]
     if "transition" in props:
         transition_id = props["transition"]
         if not dynalink(transition_id) or transition_id.value not in TRANSITIONS:
@@ -195,27 +202,28 @@ def load_scene(scene, scene_manager):
 
 def load_hotspot(hotspot, scene_manager):
     props = hotspot.properties
-    required_properties = ["x", "y"]
-    all_properties = ["x", "y", "width", "height", "img", "scale", "label", "frames", "speed",
-                      "label", "description", "verb", "walk_x", "walk_y", "hint", "solid", "flag", "facing"]
+    required_properties = ["coords"]
+    all_properties = ["coords", "width", "height", "img", "scale", "label", "frames", "speed",
+                      "label", "description", "verb", "walk_to", "hint", "solid", "flag", "facing"]
     check_properties(props, required_properties, all_properties, hotspot.name)
 
     # Generate args dict for hotspot definition
     args = {}
     args["name"] = hotspot.name
-    args["x"] = props["x"]
-    args["y"]=props["y"]
+    args["x"], args["y"] = props["coords"]
 
     if "img" in props:
-        args["image_file"] = props["img"]
+        args["image"] = props["img"]
+    else:
+        args["image"] = hotspot.name + ".png"
     if "label" in props:
         args["label"] = String(props["label"], "items", cfg.tm)
     if "hint" in props:
         args["hint_message"] = String(props["hint"], "descs", cfg.tm)
     if "scale" in props:
         args["scale"] = props["scale"]
-    if "walk_x" in props and "walk_y" in props:
-        args["walk_to"] = (props["walk_x"], props["walk_y"])
+    if "walk_to" in props:
+        args["walk_to"] = props["walk_to"]
     if "description" in props:
         args["description"] = String(props["description"], "descs", cfg.tm)
     if "verb" in props:
@@ -244,7 +252,7 @@ def load_hotspot(hotspot, scene_manager):
 
 def load_exit(exit, scene_manager):
     props = exit.properties
-    required_properties = ["x", "y", "w", "h", "target", "spawn_x", "spawn_y"]
+    required_properties = ["x", "y", "w", "h", "target", "spawn"]
     all_properties = required_properties
     check_properties(props, required_properties, all_properties, exit.name)
 
@@ -255,8 +263,7 @@ def load_exit(exit, scene_manager):
     args["w"]=getprop(props["w"])
     args["h"]=getprop(props["h"])
     args["target_scene"]=dynalink(props["target"])
-    args["spawn_x"]=props["spawn_x"]
-    args["spawn_y"]=props["spawn_y"]
+    args["spawn_x"], args["spawn_y"] = props["spawn"]
 
     if exit.scene not in scene_manager.scenes:
         raise NameError(f"Scene {exit.scene} doesn't exist for exit {exit.name}")
@@ -266,7 +273,7 @@ def load_exit(exit, scene_manager):
 
 def load_ambient(ambient, scene_manager):
     props = ambient.properties
-    required_properties = ["x", "y", "img"]
+    required_properties = ["x", "y"]
     all_properties = ["x", "y", "img", "frames", "speed", "scale", "label", "layer", "solid",
                       "moveto_x", "moveto_y", "move_speed", "loop", "label", "walk_x", "walk_y"]
     check_properties(props, required_properties, all_properties, ambient.name)
@@ -276,7 +283,10 @@ def load_ambient(ambient, scene_manager):
     #args["name"] = ambient.name
     args["x"] = props["x"]
     args["y"]=props["y"]
-    args["image_file"] = props["img"]
+    if "img" in props:
+        args["image_file"] = props["img"]
+    else:
+        args["image_file"] = ambient.name + ".png"
     if "label" in props:
         args["label_id"] = String(props["label"], "items", cfg.tm)
     if "hint" in props:
@@ -287,6 +297,8 @@ def load_ambient(ambient, scene_manager):
         args["walk_to"] = (props["walk_x"], props["walk_y"])
     if "moveto_x" in props and "moveto_y" in props:
         args["move_to"] = (props["moveto_x"], props["moveto_y"])
+    if "move_speed" in props :
+        args["move_speed"]=props["move_speed"]
     if "frames" in props:
         args["num_frames"] = props["frames"]
     if "speed" in props:
