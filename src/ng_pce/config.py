@@ -96,3 +96,5 @@ STEP_TYPES = {
 
 tm=None
 
+debug_enabled = False
+show_hints = False

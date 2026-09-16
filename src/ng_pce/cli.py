@@ -21,6 +21,7 @@ def debug():
     """Run the game in debug mode (reload automatically when scripts changes)"""
     print("Trying to run game from working directory...")
     import ng_pce.engine as engine
+    engine.cfg.debug_enabled = True
     engine.init()
     engine.load_scripts("scripts")
     reloader=start_reloader(engine, "scripts")

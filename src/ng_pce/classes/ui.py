@@ -845,15 +845,6 @@ class SystemMenu:
                 "rect": None, "is_open": False
             },
             {
-                "title": cfg.tm.get("menu", "HELP_TITLE", "HELP"),
-                "items": [
-                    cfg.tm.get("menu", "DEBUG_OPT", "DEBUG"),
-                    cfg.tm.get("menu", "GAME_HELP_OPT", "HINTS"),
-                    cfg.tm.get("menu", "NO_OPT", "OFF")
-                ],
-                "rect": None, "is_open": False
-            },
-            {
                 "title": cfg.tm.get("menu", "TEXT_TITLE", "TEXT"),
                 "items": [
                     {"label": cfg.tm.get("menu", "VEL_LABEL", "SPEED"),
@@ -861,17 +852,6 @@ class SystemMenu:
                     {"label": cfg.tm.get("menu", "SIZE_LABEL", "SIZE"),
                      "options": cfg.tm.get("menu", "SIZE_OPTS", ["SMALL", "MED", "LARGE"])}
                 ],
-                "rect": None, "is_open": False
-            },
-            {
-                "title": cfg.tm.get("menu", "SOUND_TITLE", "SOUND"),
-                "items": [cfg.tm.get("menu", "YES_OPT", "ON"), cfg.tm.get("menu", "NO_OPT", "OFF")],
-                "rect": None, "is_open": False
-            },
-            {
-                "title": cfg.tm.get("menu", "CURSOR_TITLE", "CURSOR"),
-                "items": [cfg.tm.get("menu", "CURSOR_CLASSIC", "CLASSIC"),
-                          cfg.tm.get("menu", "CURSOR_MODERN", "MODERN")],
                 "rect": None, "is_open": False
             }
         ]

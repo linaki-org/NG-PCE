@@ -172,7 +172,7 @@ def stop_scene_music():
 #  HERRAMIENTAS DE DEBUG
 # ==========================================
 def draw_debug_overlay(screen, scene, character, movement):
-    if not cfg.CONFIG["DEBUG_MODE"]: return
+    if not cfg.debug_enabled: return
 
     font = pygame.font.Font(cfg.UI_FONT_PATH, 12)
     overlay = pygame.Surface((cfg.CONFIG["GAME_WIDTH"], cfg.CONFIG["GAME_HEIGHT"]), pygame.SRCALPHA)
@@ -186,12 +186,12 @@ def draw_debug_overlay(screen, scene, character, movement):
         screen_rect = exit_zone.rect.copy()
         screen_rect.x -= cam_x
 
-        if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+        if not cfg.show_hints:
             pygame.draw.rect(overlay, (255, 0, 0, 60), screen_rect)
 
         pygame.draw.rect(overlay, (255, 0, 0), screen_rect, 2)
 
-        if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+        if not cfg.show_hints:
             txt = font.render(f"EXIT -> {exit_zone.target_scene}", True, (255, 255, 255))
             overlay.blit(txt, (screen_rect.x, screen_rect.y - 15))
 
@@ -201,19 +201,19 @@ def draw_debug_overlay(screen, scene, character, movement):
         screen_rect.x -= cam_x
 
         if screen.get_rect().colliderect(screen_rect):
-            if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+            if not cfg.show_hints:
                 pygame.draw.rect(overlay, (0, 255, 255, 60), screen_rect)
 
             pygame.draw.rect(overlay, (0, 255, 255), screen_rect, 2)
 
-            label_text = hs.label if cfg.CONFIG["SHOW_HINTS_ONLY"] else f"ID: {hs.name}"
+            label_text = hs.label if cfg.show_hints else f"ID: {hs.name}"
             txt = font.render(label_text, True, (0, 255, 255))
             overlay.blit(txt, (screen_rect.x, screen_rect.y - 15))
 
     # ---------------------------------------------------------
     # 2. ELEMENTOS SOLO VISIBLES EN DEBUG COMPLETO
     # ---------------------------------------------------------
-    if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+    if not cfg.show_hints:
 
         # --- NUEVO: DIBUJAR AMBIENT ANIMATIONS (ROSA) ---
         # Esto te permitirá ver la colisión sólida que hemos arreglado
@@ -274,15 +274,15 @@ def draw_debug_overlay(screen, scene, character, movement):
 # ==========================================
 def enable_debug():
     """Activa el modo Debug completo (Técnico)"""
-    cfg.CONFIG["DEBUG_MODE"] = True
-    cfg.CONFIG["SHOW_HINTS_ONLY"] = False  # Muestra TODO
+    cfg.debug_enabled = True
+    cfg.show_hints = False  # Muestra TODO
     debug_log("Debug Mode: ON (FULL)")
 
 
 def enable_game_help():
     """Activa solo las ayudas visuales (Hotspots)"""
-    cfg.CONFIG["DEBUG_MODE"] = True
-    cfg.CONFIG["SHOW_HINTS_ONLY"] = True  # Solo muestra Hotspots/Salidas
+    cfg.debug_enabled = True
+    cfg.show_hints = True  # Solo muestra Hotspots/Salidas
     debug_log("Game Help: ON (HINTS ONLY)")
 
 
@@ -618,9 +618,13 @@ def text_event(texto, speaker=None, pos=None, text_time=None):
         # Voice exists, play it and use its duration
         voice_path=os.path.join(cfg.VOICE_DIR, text_key+".ogg")
         debug_log(f"Voice exists in {voice_path}")
-        voice=pygame.mixer.Sound(voice_path)
-        TEXT_DISPLAY_TIMER=voice.get_length()
-        voice.play()
+        try :
+            voice=pygame.mixer.Sound(voice_path)
+        except:
+            print("Error loading voice file:", voice_path)
+        else:
+            TEXT_DISPLAY_TIMER=voice.get_length()
+            voice.play()
     else:
         debug_log(f"Unable to find voice {text_key}")
         # Cálculo automático del tiempo
@@ -1011,26 +1015,7 @@ def find_original_definition(item_id):
 # ==========================================
 # Recuperamos la configuración de inicio rápido
 start_scene_id = cfg.CONFIG.get("DEV_START_SCENE")
-
-# Lógica: ¿Arrancamos en modo DEBUG directo a una escena, o normal al Título?
-if cfg.CONFIG["DEBUG_MODE"] and start_scene_id:
-    # 1. Modo Desarrollo: Saltamos directo a la escena configurada
-    print(f"[BOOT] Debug Mode: Skipping intro and title. Loading: {start_scene_id}")
-    scene_manager.change_scene(start_scene_id)
-
-    if scene_manager.current_scene:
-        player.set_scale(scene_manager.current_scene.get_dynamic_scale(player.rect.bottom))
-
-    CURRENT_STATE = GameState.EXPLORE
-
-else:
-    # 2. Modo Normal (Release): Arrancamos en el menú de título
-
-    # --- CORRECCIÓN: NO CARGAR LA ESCENA AQUÍ ---
-    # Al quitar esta línea, evitamos que se dispare el on_enter (y el texto) antes de tiempo.
-    # scene_manager.change_scene("AVDA_PAZ")  <--- COMENTAR O BORRAR ESTA LÍNEA
-
-    CURRENT_STATE = GameState.TITLE
+CURRENT_STATE = GameState.EXPLORE
 
 
 
@@ -1111,16 +1096,6 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             set_state(GameState.SAVELOAD)  # <--- CORREGIDO: Era change_state
             system_menu.close_all()
 
-    # --- MENU HELP ---
-    elif menu_title == cfg.tm.get("menu", "HELP_TITLE", "HELP"):
-        if item_label == cfg.tm.get("menu", "DEBUG_OPT", "DEBUG"):
-            cfg.CONFIG["DEBUG_MODE"] = not cfg.CONFIG.get("DEBUG_MODE", False)
-        elif item_label == cfg.tm.get("menu", "GAME_HELP_OPT", "HINTS"):
-            cfg.CONFIG["SHOW_HINTS_ONLY"] = not cfg.CONFIG.get("SHOW_HINTS_ONLY", False)
-        elif item_label == cfg.tm.get("menu", "NO_OPT", "OFF"):
-            cfg.CONFIG["DEBUG_MODE"] = False
-            cfg.CONFIG["SHOW_HINTS_ONLY"] = False
-
     # --- MENU TEXT ---
     elif menu_title == cfg.tm.get("menu", "TEXT_TITLE", "TEXT"):
         # 1. CAMBIO DE VELOCIDAD
@@ -1149,24 +1124,6 @@ def logic_system_menu_action(menu_title, item_label, context_label=None):
             # Muestra "Tamaño: GRANDE" usando el sistema de mensajes del juego
             prefix = cfg.tm.get("msgs", "MSG_SIZE", "Size: ")
             text_event(texto=f"{prefix}{item_label}", text_time=1.5)
-
-    # --- MENU SOUND ---
-    elif menu_title == cfg.tm.get("menu", "SOUND_TITLE", "SOUND"):
-        if item_label == cfg.tm.get("menu", "YES_OPT", "ON"):
-            pygame.mixer.music.unpause()
-            # Aquí podrías activar efectos de sonido también
-        else:
-            pygame.mixer.music.pause()
-
-    # --- MENU CURSOR ---
-    elif menu_title == cfg.tm.get("menu", "CURSOR_TITLE", "CURSOR"):
-        if item_label == cfg.tm.get("menu", "CURSOR_CLASSIC", "CLASSIC"):
-            cfg.CONFIG["CURSOR_STYLE"] = "CLASSIC"
-        else:
-            cfg.CONFIG["CURSOR_STYLE"] = "MODERN"
-
-
-# --- ¡IMPORTANTE! CONECTAR LA FUNCIÓN AL MENÚ ---
 
 
 def handle_input_explore(event):
@@ -1491,9 +1448,9 @@ def draw_explore_mode(screen):
     current_scene.draw_ambient(screen, layer_filter="front")
 
     # 5. DEBUG / UI (SIEMPRE LO ÚLTIMO)
-    if cfg.CONFIG["DEBUG_MODE"] and not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+    if cfg.debug_enabled and not cfg.show_hints:
         draw_debug_overlay(screen, current_scene, player, movement)
-    elif cfg.CONFIG["SHOW_HINTS_ONLY"]:
+    elif cfg.show_hints:
         draw_hints_overlay(screen, current_scene, current_scene.camera_x)
 
     # Lógica de Oscuridad (Si la escena es oscura)
@@ -1660,7 +1617,7 @@ def draw_hints_overlay(screen, scene, camera_x):
     Dibuja etiquetas sobre objetos y salidas.
     VERSIÓN DEFINITIVA: Líneas detrás del texto y posición corregida.
     """
-    if not cfg.CONFIG["SHOW_HINTS_ONLY"]:
+    if not cfg.show_hints:
         return
 
     font = pygame.font.Font(cfg.UI_FONT_PATH, 16)
@@ -2096,7 +2053,7 @@ def mainloop():
                 else:
                     # Callbacks para el menú
                     title_cbs = {
-                        "new_game": lambda: scene_manager.change_scene("peace_avenue"), # Legacy implementation, replace as soon as possible with proper boot script handler
+                        "new_game": lambda: scene_manager.change_scene("peace_avenue") and set_state(GameState.EXPLORE), # Legacy implementation, replace as soon as possible with proper boot script handler
                         "load_game": lambda: save_load_ui.open_menu("LOAD", lambda: CURRENT_STATE),
                         "open_lang": language_ui.open_menu,
                         "open_credits": credits_window.show,
@@ -2183,16 +2140,16 @@ def mainloop():
             elif CURRENT_STATE == GameState.EXPLORE:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F1:
-                        if cfg.CONFIG["DEBUG_MODE"] and cfg.CONFIG["SHOW_HINTS_ONLY"]:
-                            cfg.CONFIG["DEBUG_MODE"] = False
-                            cfg.CONFIG["SHOW_HINTS_ONLY"] = False
+                        if cfg.debug_enabled and cfg.show_hints:
+                            cfg.debug_enabled = False
+                            cfg.show_hints = False
                         else:
                             enable_game_help()
                     elif event.key == pygame.K_F2:
                         system_menu.toggle()
                     elif event.key == pygame.K_F3:
-                        if cfg.CONFIG["DEBUG_MODE"] and not cfg.CONFIG["SHOW_HINTS_ONLY"]:
-                            cfg.CONFIG["DEBUG_MODE"] = False
+                        if cfg.debug_enabled and not cfg.show_hints:
+                            cfg.debug_enabled = False
                         else:
                             enable_debug()
                     elif event.key == pygame.K_F4:
