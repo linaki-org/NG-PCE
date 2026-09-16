@@ -6,7 +6,7 @@ import gc
 
 import ng_pce.config as cfg
 from ng_pce.classes.resources import RES_MANAGER
-from ng_pce.scenes.variables import GAME_STATE
+# from ng_pce.engine.game_state import GAME_STATE
 from ng_pce.classes.commons import TRANSITION_FADE, TRANSITION_ZOOM, draw_text_sharp
 from ng_pce.classes.ui import MapNode
 
@@ -168,7 +168,7 @@ class Scene:
         self.hotspots.hotspots.empty()
         for data in self.hotspot_data:
             flag = data.get("flag_name")
-            if flag and GAME_STATE.get(flag, False): continue            
+            # if flag and GAME_STATE.get(flag, False): continue            
             d = data.copy()
             label_key = d.get("label_id") 
             if label_key and label_key in cfg.tm.variables["items"]: d["label"] = cfg.tm.get("items", label_key)
@@ -183,7 +183,7 @@ class Scene:
         self.ambient_anims = []
         for d in self.ambient_data:
             flag = d.get("flag_name")
-            if flag and not GAME_STATE.get(flag, False): continue
+            # if flag and not GAME_STATE.get(flag, False): continue
             anim = AmbientAnimation(**d)
             self.ambient_anims.append(anim)
 

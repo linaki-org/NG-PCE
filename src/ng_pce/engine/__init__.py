@@ -15,10 +15,7 @@ import yaml
 
 import ng_pce.config as cfg
 
-# Scenes imports
-from ng_pce.scenes.variables import GAME_STATE, GameState
-from ng_pce.scenes.intro import IntroManager
-from ng_pce.scenes.ending import EndingManager
+from ng_pce.engine.game_state import GAME_STATE, GameState
 import ng_pce.engine.script_loader as loader
 from ng_pce.classes import (
     AnimatedHotspot, AnimatedCharacter, SceneManager, DialogueSystem,
@@ -366,7 +363,7 @@ def draw_cursor(target_surface, is_active=False):
     pair = None
 
     # Elegir imagen según el estado
-    if CURRENT_STATE in [GameState.TITLE, GameState.SAVELOAD, GameState.LANGUAGE, GameState.MAP, GameState.ENDING]:
+    if CURRENT_STATE in [GameState.TITLE, GameState.SAVELOAD, GameState.LANGUAGE, GameState.MAP]:
         pair = CURSOR_IMGS.get("WALK")
     else:
         pair = CURSOR_IMGS.get(CURRENT_CURSOR_STATE)
@@ -549,11 +546,8 @@ def sync_states():
     if CURRENT_STATE == GameState.TITLE:
         return
 
-    if ending_manager.active:
-        CURRENT_STATE = GameState.ENDING
-        return
 
-    if CURRENT_STATE == GameState.TITLE or CURRENT_STATE == GameState.INTRO:
+    if CURRENT_STATE == GameState.TITLE:
         return
 
     # 1. PRIORIDAD TOTAL: Si hay cutscene, nos quedamos en cutscene
@@ -1864,7 +1858,7 @@ def logic_close_menu():
 running=True
 
 def init_managers():
-    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, intro_manager, ending_manager, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
+    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
 
     cfg.tm = TranslationManager(cfg.DEFAULT_LANG_FILE)
 
@@ -1942,19 +1936,6 @@ def init_managers():
 
     scene_manager.set_ui_callback(reset_game_ui_state)  # Le pasamos la función de limpieza al SceneManager
     scene_manager.set_player(player)  # CONEXIÓN JUGADOR (Recuerda lo que mencioné en el reporte):
-    # intro está en otro file
-    intro_manager = IntroManager(
-        set_state_callback=set_state,  # Función para cambiar estado
-        play_music_callback=play_scene_music,  # Función para tocar música
-        scene_manager_ref=scene_manager,  # Objeto scene_manager
-        get_texts_callback=lambda: cfg.tm.variables["cine"]  # Lambda para obtener textos actuales
-    )
-    # ending está en otro file
-    ending_manager = EndingManager(
-        set_state_callback=set_state,  # Para volver al Título al acabar
-        play_music_callback=play_scene_music,  # Para poner la música de créditos
-        get_texts_callback=lambda: cfg.tm.variables["cine"]
-    )
     # Inicializamos el sistema de mapas
     map_system = MapSystem("mapa1.jpg", scene_manager)
 
@@ -1963,7 +1944,7 @@ def init_managers():
     CURRENT_STATE = GameState.TITLE  # para arrancar en el titulo
 
 def init():
-    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, intro_manager, ending_manager, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
+    global movement, textbox, verb_menu, inventory, cutscene_manager, system_menu, title_menu, dialogue_system, save_load_ui, language_ui, map_system, CURRENT_STATE, scene_manager, debug_console, credits_window, screen, clock, scale_factor, offset_x, offset_y, CURRENt8SPEAKER_REF, CURRENT_TEXT_POS, DIALOGUE_STYLE, TEXT_DISPLAY_TIMER, INFO_TEXT_TIMER, SCREEN_OVERLAY_TEXT, CURRENT_CURSOR_STATE, CURRENT_ACTION_ANIM, CURRENT_SPEAKER_REF, MUSIC_STOP_TIME, LAST_EXIT_CLICK_TIME, DOUBLE_CLICK_THRESHOLD, player, real_window, CURSOR_IMGS, actionsManager
 
     print("[ENGINE] Engine is booting...")
 
@@ -2115,7 +2096,7 @@ def mainloop():
                 else:
                     # Callbacks para el menú
                     title_cbs = {
-                        "new_game": intro_manager.start_intro,
+                        "new_game": lambda: scene_manager.change_scene("peace_avenue"), # Legacy implementation, replace as soon as possible with proper boot script handler
                         "load_game": lambda: save_load_ui.open_menu("LOAD", lambda: CURRENT_STATE),
                         "open_lang": language_ui.open_menu,
                         "open_credits": credits_window.show,
@@ -2123,11 +2104,6 @@ def mainloop():
                     }
                     title_menu.handle_input(event, title_cbs)
 
-            elif CURRENT_STATE == GameState.INTRO:
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN: intro_manager.handle_input()
-
-            elif CURRENT_STATE == GameState.ENDING:
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN: ending_manager.handle_input()
 
             elif CURRENT_STATE == GameState.CUTSCENE:
                 if event.type == pygame.KEYDOWN:
@@ -2229,11 +2205,6 @@ def mainloop():
         if CURRENT_STATE == GameState.MAP:
             map_system.update(dt, scene_manager, player)
 
-        elif CURRENT_STATE == GameState.INTRO:
-            intro_manager.update(dt)
-
-        elif CURRENT_STATE == GameState.ENDING:
-            ending_manager.update(dt)
 
         elif CURRENT_STATE == GameState.CUTSCENE:
             # En Cutscenes, actualizamos al manager y también al player si se mueve por script
@@ -2327,9 +2298,6 @@ def mainloop():
             if credits_window.visible:
                 credits_window.draw(screen)
 
-        elif CURRENT_STATE == GameState.INTRO:
-            intro_manager.draw(screen)
-
         elif CURRENT_STATE == GameState.MAP:
             draw_map_mode(screen)
 
@@ -2354,8 +2322,6 @@ def mainloop():
             title_menu.draw(screen)
             language_ui.draw(screen)
 
-        elif CURRENT_STATE == GameState.ENDING:
-            ending_manager.draw(screen)
 
         debug_console.draw(screen)
 
@@ -2447,7 +2413,7 @@ def mainloop():
             pass  # language_ui.draw_text_hd() si lo implementas
 
         # 3. TEXTO FLOTANTE (Overlay - "Mirar farol", subtítulos)
-        if SCREEN_OVERLAY_TEXT and not hay_transicion and CURRENT_STATE not in [GameState.SAVELOAD, GameState.ENDING]:
+        if SCREEN_OVERLAY_TEXT and not hay_transicion and CURRENT_STATE not in [GameState.SAVELOAD]:
             cam_x = 0
             if scene_manager.get_current_scene():
                 cam_x = scene_manager.get_current_scene().camera_x

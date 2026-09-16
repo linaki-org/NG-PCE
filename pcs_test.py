@@ -1,2 +1,2 @@
-import pcscript as pcs
+import ng_pce.pcscript as pcs
 

@@ -20,6 +20,9 @@ license-files = ["LICENSE"]
 
 dependencies=["pygame", "lark", "pyyaml", "typer"]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.urls]
 Homepage = "https://github.com/linaki-org/ng-pce"
 
